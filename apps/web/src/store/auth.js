@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { api, clearTokens, setTokens } from '../api/client.js';
+import { api, clearTokens, getRefreshToken, setTokens } from '../api/client.js';
 
 export const useAuth = create((set) => ({
   user: null,
@@ -22,7 +22,7 @@ export const useAuth = create((set) => ({
     return api('/auth/register', { method: 'POST', body: { email, password, fullName } });
   },
   async logout() {
-    const rt = localStorage.getItem('pine.refresh');
+    const rt = getRefreshToken();
     if (rt)
       await api('/auth/logout', { method: 'POST', body: { refreshToken: rt } }).catch(() => {});
     clearTokens();

@@ -39,7 +39,6 @@ WORKDIR /app
 
 # Copy node_modules from deps stage
 COPY --from=deps /app/node_modules          ./node_modules
-COPY --from=deps /app/apps/api-gateway/node_modules ./apps/api-gateway/node_modules 2>/dev/null || true
 
 # Copy source
 COPY packages/ ./packages/

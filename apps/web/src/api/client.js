@@ -1,28 +1,24 @@
 const API = import.meta.env.PINE_API_URL || '/api/v1';
 
-let memoryAccess;
-let memoryRefresh;
-const REFRESH_KEY = 'pine.refresh';
-const ACCESS_KEY = 'pine.access';
-
-function loadTokens() {
-  if (memoryAccess === undefined) memoryAccess = sessionStorage.getItem(ACCESS_KEY) || null;
-  if (memoryRefresh === undefined) memoryRefresh = localStorage.getItem(REFRESH_KEY) || null;
-}
-loadTokens();
+// Tokens are kept in module-level memory only. The previous implementation
+// persisted the refresh token to `localStorage`, which is reachable by any
+// XSS vector running on the page; a single content-injection bug could
+// drain customer funds. Refresh tokens now live for the lifetime of the
+// page only — re-authentication is required after a hard reload. The
+// long-term fix (tracked in docs/PRODUCTION_READINESS.md) is to deliver
+// the refresh token in an HttpOnly Secure SameSite=Strict cookie issued
+// by /auth/login, which removes refresh tokens from JS entirely.
+let memoryAccess = null;
+let memoryRefresh = null;
 
 export function setTokens({ accessToken, refreshToken }) {
   memoryAccess = accessToken || null;
   memoryRefresh = refreshToken || memoryRefresh || null;
-  if (accessToken) sessionStorage.setItem(ACCESS_KEY, accessToken);
-  if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
 }
 
 export function clearTokens() {
   memoryAccess = null;
   memoryRefresh = null;
-  sessionStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
 }
 
 export function getAccessToken() {
@@ -32,11 +28,26 @@ export function getRefreshToken() {
   return memoryRefresh;
 }
 
+// Reads the double-submit CSRF token issued by the server via the
+// `__Host-csrf` cookie. Required for every state-changing request.
+function readCsrfToken() {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)__Host-csrf=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
 async function refreshAccess() {
   if (!memoryRefresh) throw new Error('no_refresh');
+  const csrf = readCsrfToken();
   const r = await fetch(`${API}/auth/refresh`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    credentials: 'same-origin',
+    headers: {
+      'content-type': 'application/json',
+      ...(csrf ? { 'x-csrf-token': csrf } : {}),
+    },
     body: JSON.stringify({ refreshToken: memoryRefresh }),
   });
   if (!r.ok) {
@@ -50,12 +61,15 @@ async function refreshAccess() {
 
 export async function api(path, { method = 'GET', body, headers = {}, idempotencyKey } = {}) {
   const doFetch = async (token) => {
+    const csrf = UNSAFE_METHODS.has(method) ? readCsrfToken() : null;
     const opts = {
       method,
+      credentials: 'same-origin',
       headers: {
         'content-type': 'application/json',
         ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...(idempotencyKey ? { 'idempotency-key': idempotencyKey } : {}),
+        ...(csrf ? { 'x-csrf-token': csrf } : {}),
         ...headers,
       },
     };

@@ -1,11 +1,22 @@
 /**
  * Transaction worker.
  *
- * Polls pending ACH and wire transactions and advances them through their
- * state machine. In production, ACH submission goes to a NACHA partner API
- * (e.g., Modern Treasury, Dwolla, JPM Treasury Services); wires go to Fedwire
- * via a partner bank. This worker simulates the state machine for the demo
- * environment: pending → submitted → settled (T+1 simulated as immediate).
+ * INTERNAL LEDGER SIMULATION MODE
+ * ================================
+ * This worker advances ACH and wire rows through a state machine entirely
+ * inside the Pine database. **No real ACH (NACHA) submission or Fedwire
+ * transmission occurs.** It exists so that the rest of the platform can be
+ * exercised end-to-end against a deterministic ledger.
+ *
+ * Before this service can be used to move real funds, this file must be
+ * replaced with an adapter that talks to a regulated banking partner
+ * (Modern Treasury / Dwolla / JPM Treasury Services for ACH; a Fedwire
+ * sponsor bank for wires) and reconciles their webhooks back into the
+ * outbox. That work is tracked in docs/PRODUCTION_READINESS.md and is a
+ * hard go-live blocker.
+ *
+ * Concurrency: rows are claimed with `FOR UPDATE SKIP LOCKED` so this
+ * service can run >1 replica without double-processing.
  */
 import { loadConfig } from '@pine/lib-config';
 import { createLogger } from '@pine/lib-logger';
@@ -24,32 +35,52 @@ const publish = createPublisher(config.redis.url);
 const POLL_INTERVAL_MS = 30_000;
 
 async function advanceAchSubmissions() {
-  const { rows } = await query(
-    `SELECT a.id, a.transaction_id, a.settlement_status
-       FROM ach_transfers a
-      WHERE a.settlement_status = 'initiated'
-      ORDER BY a.created_at LIMIT 25`,
-  );
-  for (const a of rows) {
-    await query(
-      `UPDATE ach_transfers
+  // Claim a batch of initiated ACH transfers atomically. SKIP LOCKED lets
+  // multiple worker replicas run safely without ever processing the same
+  // row twice. We promote settlement_status to 'submitted' in the same
+  // statement to make the claim+update atomic.
+  const { rows } = await withTransaction(async (client) => {
+    const r = await client.query(
+      `WITH claimed AS (
+         SELECT id FROM ach_transfers
+          WHERE settlement_status = 'initiated'
+          ORDER BY created_at
+          LIMIT 25
+          FOR UPDATE SKIP LOCKED
+       )
+       UPDATE ach_transfers a
           SET settlement_status = 'submitted', submitted_at = now(),
               trace_number = LPAD((1000000 + floor(random() * 8999999)::int)::text, 7, '0')
-        WHERE id = $1`,
-      [a.id],
+         FROM claimed
+        WHERE a.id = claimed.id
+        RETURNING a.id, a.transaction_id`,
     );
+    return r;
+  });
+  for (const a of rows) {
     logger.info({ transactionId: a.transaction_id }, 'ACH submitted');
   }
 }
 
 async function advanceAchSettlements() {
+  // Same SKIP LOCKED pattern: pick a batch of submitted rows whose dwell
+  // time has elapsed, settle them inside a single transaction per row so
+  // ledger promotion + transaction status + ach_transfers row all flip
+  // atomically. A crash mid-loop leaves the in-flight row still 'submitted'
+  // and it will be picked up on the next tick.
   const { rows } = await query(
-    `SELECT a.id, a.transaction_id, t.source_account_id, t.amount::text AS amount, t.type
+    `WITH claimed AS (
+       SELECT a.id FROM ach_transfers a
+        WHERE a.settlement_status = 'submitted'
+          AND a.submitted_at < now() - INTERVAL '1 minute'
+        ORDER BY a.submitted_at
+        LIMIT 25
+        FOR UPDATE SKIP LOCKED
+     )
+     SELECT a.id, a.transaction_id, t.type
        FROM ach_transfers a
-       JOIN transactions t ON t.id = a.transaction_id
-      WHERE a.settlement_status = 'submitted'
-        AND a.submitted_at < now() - INTERVAL '1 minute'
-      ORDER BY a.submitted_at LIMIT 25`,
+       JOIN claimed c ON c.id = a.id
+       JOIN transactions t ON t.id = a.transaction_id`,
   );
   for (const a of rows) {
     await withTransaction(async (client) => {
@@ -78,10 +109,15 @@ async function advanceAchSettlements() {
 
 async function advanceWires() {
   const { rows } = await query(
-    `SELECT w.id, w.transaction_id, w.status, t.amount::text AS amount
-       FROM wire_transfers w JOIN transactions t ON t.id = w.transaction_id
-      WHERE w.status = 'initiated' AND t.status = 'pending'
-      LIMIT 25`,
+    `WITH claimed AS (
+       SELECT w.id FROM wire_transfers w
+        JOIN transactions t ON t.id = w.transaction_id
+        WHERE w.status = 'initiated' AND t.status = 'pending'
+        LIMIT 25
+        FOR UPDATE SKIP LOCKED
+     )
+     SELECT w.id, w.transaction_id
+       FROM wire_transfers w JOIN claimed c ON c.id = w.id`,
   );
   for (const w of rows) {
     await withTransaction(async (client) => {

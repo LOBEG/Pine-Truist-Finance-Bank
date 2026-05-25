@@ -213,7 +213,6 @@ function AchTab({ accounts }) {
     setBusy(true);
     try {
       const body = { ...form, pin };
-      if (!body.effectiveDate) delete body.effectiveDate;
       const r = await api('/transfers/ach', {
         method: 'POST',
         idempotencyKey: newIdempotencyKey(),
@@ -415,7 +414,6 @@ function AchTab({ accounts }) {
               <option value="PPD">PPD — Personal</option>
               <option value="CCD">CCD — Business</option>
               <option value="WEB">WEB — Internet-initiated</option>
-              <option value="TEL">TEL — Telephone-initiated</option>
             </select>
           </div>
         </div>
@@ -433,10 +431,11 @@ function AchTab({ accounts }) {
             />
           </div>
           <div>
-            <label className="label">Effective date (optional)</label>
+            <label className="label">Effective date</label>
             <input
               className="input"
               type="date"
+              required
               min={new Date().toISOString().slice(0, 10)}
               value={form.effectiveDate}
               onChange={(e) => updateForm('effectiveDate', e.target.value)}

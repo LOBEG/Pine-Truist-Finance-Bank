@@ -11,7 +11,8 @@ import {
   errors,
 } from '@pine/lib-http';
 import { createJwtVerifier, requireAuth } from '@pine/lib-auth/jwt';
-import { requireRole } from '@pine/lib-auth/rbac';
+import { requireRole, requireMfa } from '@pine/lib-auth/rbac';
+import { csrfProtection } from '@pine/lib-http/csrf';
 import { createPublisher } from '@pine/lib-events';
 import { startOutboxRelay, getRedisConnection } from '@pine/lib-queue';
 
@@ -67,8 +68,22 @@ healthRoutes(app, {
 const auth = requireAuth(verifyJwt);
 // All admin endpoints require non-customer role.
 const adminOnly = requireRole('admin', 'super_admin', 'compliance_officer', 'auditor', 'support');
+// MFA step-up is mandatory for every admin endpoint — privileged actions
+// (PIN issuance, withdrawal approval, transaction release/reversal) must
+// not be reachable with a bare password+refresh session. The JWT signer
+// sets the `mfa` claim only after a successful MFA verification.
+const mfaRequired = requireMfa();
+// Double-submit CSRF protection for browser-originated admin requests.
+const adminCsrf = csrfProtection();
 
-app.use('/api/v1/admin', adminGlobalLimiter(config.redis.url), auth, adminOnly);
+app.use(
+  '/api/v1/admin',
+  adminGlobalLimiter(config.redis.url),
+  auth,
+  adminOnly,
+  mfaRequired,
+  adminCsrf,
+);
 app.use('/api/v1/admin/users', buildUsersRouter());
 app.use('/api/v1/admin/users', buildPinsRouter({ publish })); // POST /:userId/pins
 app.use(

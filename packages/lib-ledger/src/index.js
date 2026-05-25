@@ -159,10 +159,18 @@ export async function postTransaction(input) {
     }
 
     // Verify accounts exist, active, and sufficient available balance for debits.
+    // CRITICAL: Both posted AND pending debits reduce availability. A pending
+    // debit is a hold (ACH outbound / wire outbound / withdrawal hold) that
+    // will eventually consume real funds, so it must reserve availability at
+    // creation time. Failing to do so allowed overdraft when multiple holds
+    // raced against the same account.
     const debitTotals = new Map();
     for (const e of entries) {
-      if (e.direction === 'debit' && (e.status || status) === 'posted') {
-        debitTotals.set(e.accountId, (debitTotals.get(e.accountId) || 0n) + toUnits(e.amount));
+      if (e.direction === 'debit') {
+        const entryStatus = e.status || status;
+        if (entryStatus === 'posted' || entryStatus === 'pending') {
+          debitTotals.set(e.accountId, (debitTotals.get(e.accountId) || 0n) + toUnits(e.amount));
+        }
       }
     }
     for (const [accId, needed] of debitTotals) {
