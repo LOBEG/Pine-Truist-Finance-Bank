@@ -1,0 +1,13 @@
+{
+  "name": "@pine/lib-queue",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "exports": { ".": "./src/index.js" },
+  "dependencies": {
+    "bullmq": "^5.24.0",
+    "ioredis": "^5.4.1",
+    "@pine/lib-db": "*"
+  }
+}

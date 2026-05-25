@@ -1,0 +1,6 @@
+node_modules
+dist
+build
+coverage
+apps/web/dist
+db/migrations/*.sql

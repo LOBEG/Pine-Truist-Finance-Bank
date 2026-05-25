@@ -1,0 +1,247 @@
+import { Router } from 'express';
+import { asyncHandler, errors, validate } from '@pine/lib-http';
+import {
+  loginBodySchema,
+  refreshBodySchema,
+  registerBodySchema,
+  mfaVerifyBodySchema,
+} from '@pine/lib-validation';
+import { hashPassword, verifyPassword, encryptField, decryptField } from '@pine/lib-crypto';
+import { generateMfaSecret, buildOtpAuthUrl, verifyTotp } from '@pine/lib-auth/mfa';
+import { query } from '@pine/lib-db';
+import { loadUserPermissions, writeAudit } from '../services/identity.js';
+
+const ACCOUNT_LOCK_THRESHOLD = 10;
+const ACCOUNT_LOCK_MINUTES = 30;
+
+export function buildAuthRouter({ signAccess, sessions, config, logger, publish }) {
+  const router = Router();
+
+  router.post(
+    '/register',
+    validate({ body: registerBodySchema }),
+    asyncHandler(async (req, res) => {
+      const { email, password, fullName, phone } = req.body;
+      const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+      if (existing.rows[0]) throw errors.conflict('email_taken', 'Email already registered.');
+
+      const hash = await hashPassword(password);
+      const insert = await query(
+        `INSERT INTO users (email, password_hash, full_name, phone, kyc_status)
+         VALUES ($1, $2, $3, $4, 'pending') RETURNING id, email, full_name, created_at`,
+        [email, hash, fullName, phone || null],
+      );
+      const user = insert.rows[0];
+      await query(
+        `INSERT INTO user_roles (user_id, role_id)
+         SELECT $1, id FROM roles WHERE name = 'customer'`,
+        [user.id],
+      );
+
+      await writeAudit({
+        actorUserId: user.id,
+        actorRole: 'customer',
+        action: 'auth.user.registered',
+        resourceType: 'user',
+        resourceId: user.id,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        requestId: req.id,
+      });
+
+      res.status(201).json({ id: user.id, email: user.email, fullName: user.full_name });
+    }),
+  );
+
+  router.post(
+    '/login',
+    validate({ body: loginBodySchema }),
+    asyncHandler(async (req, res) => {
+      const { email, password, mfaCode, deviceFingerprint } = req.body;
+      const ua = req.headers['user-agent'] || '';
+
+      const { rows } = await query(
+        `SELECT id, password_hash, mfa_enabled, mfa_secret_encrypted,
+                locked_until, failed_login_count, deleted_at
+           FROM users WHERE email = $1`,
+        [email],
+      );
+      const user = rows[0];
+
+      const recordAttempt = (success, reason) =>
+        query(
+          `INSERT INTO login_attempts (email, ip, success, failure_reason, user_agent)
+           VALUES ($1, $2::inet, $3, $4, $5)`,
+          [email, req.ip || null, success, reason || null, ua],
+        );
+
+      if (!user || user.deleted_at) {
+        await recordAttempt(false, 'unknown_user');
+        await publish('auth.login.failed', { email, reason: 'unknown_user' });
+        throw errors.unauthorized('invalid_credentials', 'Invalid email or password.');
+      }
+
+      if (user.locked_until && new Date(user.locked_until) > new Date()) {
+        await recordAttempt(false, 'locked');
+        throw errors.tooMany('account_locked', 'Account locked. Try again later.');
+      }
+
+      const ok = await verifyPassword(user.password_hash, password);
+      if (!ok) {
+        const failures = user.failed_login_count + 1;
+        const lock = failures >= ACCOUNT_LOCK_THRESHOLD;
+        await query(
+          `UPDATE users SET failed_login_count = $2,
+                            locked_until = CASE WHEN $3 THEN now() + ($4 || ' minutes')::interval ELSE locked_until END
+           WHERE id = $1`,
+          [user.id, failures, lock, ACCOUNT_LOCK_MINUTES],
+        );
+        await recordAttempt(false, 'bad_password');
+        await publish('auth.login.failed', { userId: user.id, reason: 'bad_password' });
+        throw errors.unauthorized('invalid_credentials', 'Invalid email or password.');
+      }
+
+      // MFA check (required if enabled)
+      if (user.mfa_enabled) {
+        if (!mfaCode) throw errors.unauthorized('mfa_required', 'MFA code required.');
+        const secret = decryptField(user.mfa_secret_encrypted, config.encryption.kekB64);
+        if (!verifyTotp(secret, mfaCode)) {
+          await recordAttempt(false, 'bad_mfa');
+          throw errors.unauthorized('invalid_mfa', 'Invalid MFA code.');
+        }
+      }
+
+      await query(
+        `UPDATE users SET failed_login_count = 0, locked_until = NULL, last_login_at = now()
+         WHERE id = $1`,
+        [user.id],
+      );
+
+      const { roles, permissions } = await loadUserPermissions(user.id);
+
+      const { sessionId, refreshToken } = await sessions.create({
+        userId: user.id,
+        deviceFingerprint,
+        ip: req.ip,
+        userAgent: ua,
+      });
+
+      const accessToken = signAccess(
+        {
+          email,
+          roles,
+          permissions,
+          sid: sessionId,
+          mfa: !!user.mfa_enabled,
+        },
+        { subject: user.id },
+      );
+
+      await recordAttempt(true);
+      await writeAudit({
+        actorUserId: user.id,
+        actorRole: roles[0],
+        action: 'auth.login.succeeded',
+        resourceType: 'session',
+        resourceId: sessionId,
+        ip: req.ip,
+        userAgent: ua,
+        requestId: req.id,
+      });
+      await publish('auth.login.succeeded', { userId: user.id, sessionId });
+
+      res.json({
+        accessToken,
+        refreshToken,
+        expiresIn: config.jwt.accessTtlSeconds,
+        tokenType: 'Bearer',
+        user: { id: user.id, email, roles, mfaEnabled: !!user.mfa_enabled },
+      });
+    }),
+  );
+
+  router.post(
+    '/refresh',
+    validate({ body: refreshBodySchema }),
+    asyncHandler(async (req, res) => {
+      const { refreshToken } = req.body;
+      const ua = req.headers['user-agent'] || '';
+      let next;
+      try {
+        next = await sessions.rotate({ refreshToken, ip: req.ip, userAgent: ua });
+      } catch (e) {
+        logger.warn({ err: e.message }, 'refresh failed');
+        if (e.message === 'refresh_reused')
+          throw errors.unauthorized('refresh_reused', 'Session family revoked.');
+        throw errors.unauthorized('invalid_refresh', 'Invalid refresh token.');
+      }
+
+      const { roles, permissions } = await loadUserPermissions(next.userId);
+      const { rows } = await query(`SELECT email, mfa_enabled FROM users WHERE id = $1`, [next.userId]);
+      const u = rows[0];
+      const accessToken = signAccess(
+        { email: u.email, roles, permissions, sid: next.sessionId, mfa: !!u.mfa_enabled },
+        { subject: next.userId },
+      );
+      res.json({
+        accessToken,
+        refreshToken: next.refreshToken,
+        expiresIn: config.jwt.accessTtlSeconds,
+        tokenType: 'Bearer',
+      });
+    }),
+  );
+
+  router.post(
+    '/logout',
+    validate({ body: refreshBodySchema }),
+    asyncHandler(async (req, res) => {
+      await sessions.revoke({ refreshToken: req.body.refreshToken, reason: 'logout' });
+      res.status(204).end();
+    }),
+  );
+
+  // MFA enrollment requires an authenticated session — wired in server.js.
+  router.post(
+    '/mfa/enroll',
+    asyncHandler(async (req, res) => {
+      if (!req.user) throw errors.unauthorized();
+      const secret = generateMfaSecret();
+      const enc = encryptField(secret, config.encryption.kekB64);
+      await query(
+        `UPDATE users SET mfa_secret_encrypted = $2, mfa_enabled = FALSE WHERE id = $1`,
+        [req.user.id, enc],
+      );
+      const otpAuthUrl = buildOtpAuthUrl({ secret, account: req.user.email });
+      res.json({ secret, otpAuthUrl });
+    }),
+  );
+
+  router.post(
+    '/mfa/verify',
+    validate({ body: mfaVerifyBodySchema }),
+    asyncHandler(async (req, res) => {
+      if (!req.user) throw errors.unauthorized();
+      const { rows } = await query(
+        `SELECT mfa_secret_encrypted FROM users WHERE id = $1`,
+        [req.user.id],
+      );
+      const secret = decryptField(rows[0]?.mfa_secret_encrypted, config.encryption.kekB64);
+      if (!verifyTotp(secret, req.body.code))
+        throw errors.unauthorized('invalid_mfa', 'Invalid MFA code.');
+      await query(`UPDATE users SET mfa_enabled = TRUE WHERE id = $1`, [req.user.id]);
+      await writeAudit({
+        actorUserId: req.user.id,
+        action: 'auth.mfa.enrolled',
+        resourceType: 'user',
+        resourceId: req.user.id,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        requestId: req.id,
+      });
+      res.json({ enabled: true });
+    }),
+  );
+
+  return router;
+}
