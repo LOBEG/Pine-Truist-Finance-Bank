@@ -5,7 +5,9 @@
   "type": "module",
   "main": "src/index.js",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./csrf": "./src/csrf.js",
+    "./sanitize": "./src/sanitize.js"
   },
   "dependencies": {
     "helmet": "^8.0.0",

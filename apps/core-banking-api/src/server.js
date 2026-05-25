@@ -10,6 +10,8 @@ import {
   healthRoutes,
   errors,
 } from '@pine/lib-http';
+import { csrfProtection } from '@pine/lib-http/csrf';
+import { inputSanitizer } from '@pine/lib-http/sanitize';
 import { createJwtSigner, createJwtVerifier, requireAuth } from '@pine/lib-auth/jwt';
 import { createPublisher } from '@pine/lib-events';
 import { startOutboxRelay, getRedisConnection } from '@pine/lib-queue';
@@ -71,7 +73,15 @@ if (config.security.trustProxy) app.set('trust proxy', 1);
 app.use(securityHeaders());
 app.use(corsMiddleware(config.cors.origins));
 app.use(express.json({ limit: '256kb' }));
+app.use(inputSanitizer());
 app.use(httpLogger(logger));
+
+// CSRF protection — skip for auth routes that use refresh tokens (stateless token exchange).
+app.use('/api/v1/accounts', csrfProtection());
+app.use('/api/v1/transfers', csrfProtection());
+app.use('/api/v1/withdrawals', csrfProtection());
+app.use('/api/v1/counterparties', csrfProtection());
+app.use('/api/v1/pins', csrfProtection());
 
 healthRoutes(app, {
   db: async () => {
