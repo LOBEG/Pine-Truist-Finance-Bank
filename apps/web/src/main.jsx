@@ -2,18 +2,45 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './store/auth.js';
+import { useNotifications } from './store/notifications.js';
+import { useRealtime } from './realtime/socket.js';
 import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { Transactions } from './pages/Transactions.jsx';
 import { Transfer } from './pages/Transfer.jsx';
+import { Wire } from './pages/Wire.jsx';
+import { Deposit } from './pages/Deposit.jsx';
 import { Withdraw } from './pages/Withdraw.jsx';
+import { Notifications } from './pages/Notifications.jsx';
 import { Admin } from './pages/Admin.jsx';
 import './styles.css';
 
+const REALTIME_NOTIF_EVENTS = [
+  'transaction.posted',
+  'transaction.created',
+  'transaction.flagged',
+  'balance.updated',
+  'withdrawal.approved',
+  'withdrawal.rejected',
+];
+
 function Header() {
   const { user, logout, roles = [] } = useAuth();
+  const { unread, push } = useNotifications();
   const nav = useNavigate();
+
+  // Wire global notification push so the badge stays live everywhere
+  const notifHandlers = React.useMemo(
+    () =>
+      REALTIME_NOTIF_EVENTS.reduce((acc, ev) => {
+        acc[ev] = (payload) => push(ev, payload);
+        return acc;
+      }, {}),
+    [push],
+  );
+  useRealtime(notifHandlers);
+
   if (!user) return null;
   const isAdmin = roles.some((r) =>
     ['admin', 'super_admin', 'compliance_officer', 'support'].includes(r),
@@ -27,18 +54,32 @@ function Header() {
           </span>
           Pine Bank
         </Link>
-        <nav className="flex items-center gap-6 text-sm">
+        <nav className="flex items-center gap-4 text-sm flex-wrap">
           <Link to="/" className="hover:text-pine-100">
             Accounts
           </Link>
           <Link to="/transactions" className="hover:text-pine-100">
             Transactions
           </Link>
+          <Link to="/deposit" className="hover:text-pine-100">
+            Deposit
+          </Link>
           <Link to="/transfer" className="hover:text-pine-100">
             Transfer
           </Link>
+          <Link to="/wire" className="hover:text-pine-100">
+            Wire
+          </Link>
           <Link to="/withdraw" className="hover:text-pine-100">
             Withdraw
+          </Link>
+          <Link to="/notifications" className="hover:text-pine-100 relative">
+            Alerts
+            {unread > 0 && (
+              <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold leading-none">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
           </Link>
           {isAdmin && (
             <Link to="/admin" className="hover:text-pine-100">
@@ -100,6 +141,30 @@ function App() {
             element={
               <RequireAuth>
                 <Transfer />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/deposit"
+            element={
+              <RequireAuth>
+                <Deposit />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/wire"
+            element={
+              <RequireAuth>
+                <Wire />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <RequireAuth>
+                <Notifications />
               </RequireAuth>
             }
           />
