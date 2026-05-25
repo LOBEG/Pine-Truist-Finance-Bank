@@ -69,3 +69,41 @@ jobs:
 
       - name: npm audit (high+)
         run: npm audit --audit-level=high || true
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Only validate Docker builds on main/staging pushes (not every PR to save minutes)
+    if: github.event_name == 'push'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - core-banking-api
+          - admin-api
+          - realtime-gateway
+          - fraud-engine
+          - audit-worker
+          - notification-worker
+          - transaction-worker
+          - scheduler
+          - web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.service }} image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          push: false
+          # Inline cache keeps layer caches between runs without a registry
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          tags: pine/${{ matrix.service }}:ci

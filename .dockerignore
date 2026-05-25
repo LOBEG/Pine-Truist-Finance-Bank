@@ -1,0 +1,54 @@
+# ============================================================
+# Pine Bank — shared .dockerignore
+# Applied at the monorepo root for all Docker builds.
+# ============================================================
+
+# Version control
+.git
+.gitignore
+.github
+
+# Local development
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+
+# Build artefacts
+node_modules
+*/node_modules
+dist/
+build/
+.next/
+out/
+apps/web/dist/
+*.tsbuildinfo
+
+# Tests & coverage
+tests/
+coverage/
+.nyc_output/
+*.lcov
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pino-debug.log
+
+# Editor / OS artefacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+.editorconfig
+
+# Misc
+tmp/
+.tmp/
+.cache/
+docs/

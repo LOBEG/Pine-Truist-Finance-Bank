@@ -1,11 +1,14 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
-  "build": { "builder": "NIXPACKS" },
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "apps/admin-api/Dockerfile"
+  },
   "deploy": {
-    "startCommand": "node apps/admin-api/src/server.js",
     "healthcheckPath": "/healthz",
     "healthcheckTimeout": 30,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 10,
+    "drainSeconds": 30
   }
 }
