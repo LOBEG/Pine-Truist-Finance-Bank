@@ -22,15 +22,12 @@ export function adminGlobalLimiter(redisUrl) {
     legacyHeaders: false,
     store: new RedisStore({ sendCommand: (...args) => getClient(redisUrl).call(...args) }),
     handler: (_req, res) => {
-      res
-        .status(429)
-        .type('application/problem+json')
-        .json({
-          type: 'https://pinebank.com/errors/rate_limited',
-          title: 'Too many admin requests',
-          status: 429,
-          code: 'rate_limited',
-        });
+      res.status(429).type('application/problem+json').json({
+        type: 'https://pinebank.com/errors/rate_limited',
+        title: 'Too many admin requests',
+        status: 429,
+        code: 'rate_limited',
+      });
     },
   });
 }
