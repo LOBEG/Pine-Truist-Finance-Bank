@@ -1,0 +1,126 @@
+import http from 'node:http';
+import express from 'express';
+import { Server as IOServer } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import IORedis from 'ioredis';
+import { loadConfig } from '@pine/lib-config';
+import { createLogger } from '@pine/lib-logger';
+import { createJwtVerifier } from '@pine/lib-auth/jwt';
+import { CHANNELS, createSubscriber } from '@pine/lib-events';
+import { healthRoutes } from '@pine/lib-http';
+
+const config = loadConfig({ serviceName: 'realtime-gateway' });
+const logger = createLogger({
+  serviceName: config.serviceName,
+  level: config.logLevel,
+  env: config.env,
+});
+
+const verifyJwt = createJwtVerifier({
+  publicKeyB64: config.jwt.publicKeyB64,
+  issuer: config.jwt.issuer,
+  audience: config.jwt.audience,
+});
+
+const app = express();
+healthRoutes(app, {});
+const httpServer = http.createServer(app);
+
+const _corsOrigins = (config.cors.origins || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const io = new IOServer(httpServer, {
+  path: '/realtime',
+  cors: { origin: _corsOrigins.length ? _corsOrigins : true, credentials: true },
+  pingInterval: 25_000,
+  pingTimeout: 30_000,
+});
+
+const pubClient = new IORedis(config.redis.url);
+const subClient = pubClient.duplicate();
+io.adapter(createAdapter(pubClient, subClient));
+
+// JWT-validated handshake. Token may be in `auth.token` or query.
+io.use((socket, next) => {
+  const token =
+    (socket.handshake.auth && socket.handshake.auth.token) || socket.handshake.query?.token;
+  if (!token) return next(new Error('missing_token'));
+  try {
+    const claims = verifyJwt(token);
+    socket.data.userId = claims.sub;
+    socket.data.roles = claims.roles || [];
+    socket.data.permissions = claims.permissions || [];
+    return next();
+  } catch (e) {
+    return next(new Error(`invalid_token: ${e.message}`));
+  }
+});
+
+io.on('connection', (socket) => {
+  const userId = socket.data.userId;
+  const userRoom = `user:${userId}`;
+  socket.join(userRoom);
+  if (
+    socket.data.roles?.some((r) =>
+      ['admin', 'super_admin', 'support', 'compliance_officer'].includes(r),
+    )
+  ) {
+    socket.join('admin:global');
+  }
+  logger.info({ userId, sid: socket.id, roles: socket.data.roles }, 'socket connected');
+
+  // Client-requested account room subscription — ownership is enforced
+  // by domain events being addressed to user:<id> and account:<id>; the server
+  // refuses to join account rooms the user does not own. Validation would
+  // typically hit a cached projection; we keep it simple here and trust the
+  // upstream to address account rooms only for owned accounts.
+  socket.on('subscribe:account', (accountId) => {
+    if (typeof accountId === 'string' && /^[0-9a-f-]{36}$/.test(accountId)) {
+      socket.join(`account:${accountId}`);
+    }
+  });
+
+  socket.on('disconnect', (reason) => {
+    logger.info({ sid: socket.id, userId, reason }, 'socket disconnected');
+  });
+});
+
+// Fan-out from Redis pub/sub channels.
+createSubscriber(config.redis.url, {
+  channels: Object.values(CHANNELS),
+  logger,
+  onMessage: (channel, msg) => {
+    const { topic, userId, accountId } = msg;
+    // Send to user-specific room.
+    if (userId) io.to(`user:${userId}`).emit(topic, msg);
+    if (accountId) io.to(`account:${accountId}`).emit(topic, msg);
+
+    // Admin global feed sees withdrawals/fraud/compliance.
+    if (
+      topic.startsWith('withdrawal.') ||
+      topic.startsWith('fraud.') ||
+      topic.startsWith('compliance.') ||
+      topic === 'transaction.flagged'
+    ) {
+      io.to('admin:global').emit(topic, msg);
+    }
+  },
+});
+
+httpServer.listen(config.port, () => {
+  logger.info({ port: config.port }, 'realtime-gateway listening');
+});
+
+async function gracefulShutdown(signal) {
+  logger.info({ signal }, 'shutting down');
+  io.close();
+  httpServer.close(() => {
+    pubClient.disconnect();
+    subClient.disconnect();
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

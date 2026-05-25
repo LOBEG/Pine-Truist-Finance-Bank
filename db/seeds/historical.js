@@ -53,7 +53,8 @@ function isoDate(d) {
 
 async function ensureUser() {
   const email = process.env.BOOTSTRAP_ADMIN_EMAIL || 'demo@pinebank.com';
-  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD || crypto.randomBytes(18).toString('base64url');
+  const password =
+    process.env.BOOTSTRAP_ADMIN_PASSWORD || crypto.randomBytes(18).toString('base64url');
 
   const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
   if (existing.rows[0]) return existing.rows[0].id;
@@ -69,15 +70,15 @@ async function ensureUser() {
      SELECT $1, id FROM roles WHERE name = 'customer'`,
     [rows[0].id],
   );
-  console.info(`Seeded user ${email} (password: ${password})`);
+  console.info(`Seeded user ${email} (initial password set via SEED_DEMO_USER_PASSWORD env)`);
   return rows[0].id;
 }
 
 async function ensureAccount(userId, type, nickname) {
-  const existing = await query(
-    `SELECT id FROM accounts WHERE user_id = $1 AND account_type = $2`,
-    [userId, type],
-  );
+  const existing = await query(`SELECT id FROM accounts WHERE user_id = $1 AND account_type = $2`, [
+    userId,
+    type,
+  ]);
   if (existing.rows[0]) return existing.rows[0].id;
 
   const number = generateAccountNumber();
@@ -139,7 +140,9 @@ async function getExternalClearingAccount() {
   if (_externalClearingId) return _externalClearingId;
 
   // System (bank-owned) user holds clearing accounts. Created lazily.
-  let userIdRow = await query(`SELECT id FROM users WHERE email = $1`, ['system@pinebank.internal']);
+  const userIdRow = await query(`SELECT id FROM users WHERE email = $1`, [
+    'system@pinebank.internal',
+  ]);
   let systemUserId = userIdRow.rows[0]?.id;
   if (!systemUserId) {
     const r = await query(
@@ -290,16 +293,16 @@ export async function seedHistorical() {
 
     // Bills (debits from checking)
     const bills = [
-      { day: 3,  desc: 'Mortgage payment',        amt: jitter(rng, 4_250, 0.005) },
-      { day: 5,  desc: 'Electric utility',        amt: jitter(rng, 215, 0.18) },
-      { day: 7,  desc: 'Gas utility',             amt: jitter(rng, 95, 0.25) },
-      { day: 9,  desc: 'Internet / Cable',        amt: jitter(rng, 180, 0.02) },
-      { day: 12, desc: 'Auto loan',               amt: jitter(rng, 612, 0.01) },
-      { day: 15, desc: 'Auto insurance',          amt: jitter(rng, 320, 0.01) },
+      { day: 3, desc: 'Mortgage payment', amt: jitter(rng, 4_250, 0.005) },
+      { day: 5, desc: 'Electric utility', amt: jitter(rng, 215, 0.18) },
+      { day: 7, desc: 'Gas utility', amt: jitter(rng, 95, 0.25) },
+      { day: 9, desc: 'Internet / Cable', amt: jitter(rng, 180, 0.02) },
+      { day: 12, desc: 'Auto loan', amt: jitter(rng, 612, 0.01) },
+      { day: 15, desc: 'Auto insurance', amt: jitter(rng, 320, 0.01) },
       { day: 18, desc: 'Groceries — Whole Foods', amt: jitter(rng, 740, 0.15) },
-      { day: 22, desc: 'Dining out',              amt: jitter(rng, 410, 0.30) },
-      { day: 25, desc: 'Streaming services',      amt: jitter(rng, 78, 0.05) },
-      { day: 27, desc: 'Credit card payment',     amt: jitter(rng, 1850, 0.20) },
+      { day: 22, desc: 'Dining out', amt: jitter(rng, 410, 0.3) },
+      { day: 25, desc: 'Streaming services', amt: jitter(rng, 78, 0.05) },
+      { day: 27, desc: 'Credit card payment', amt: jitter(rng, 1850, 0.2) },
     ];
     for (const b of bills) {
       await adjustment({
@@ -314,26 +317,33 @@ export async function seedHistorical() {
 
     // Monthly sweep: checking -> savings $4000, -> money market $5000
     await internalMove({
-      from: checking, to: savings, amount: '4000.00',
+      from: checking,
+      to: savings,
+      amount: '4000.00',
       when: mISO(28, 16),
       description: 'Monthly savings transfer',
       idempotencyKey: `seed:xfer-sav:${userId}:${monthIx}`,
     });
     await internalMove({
-      from: checking, to: mm, amount: '5000.00',
+      from: checking,
+      to: mm,
+      amount: '5000.00',
       when: mISO(28, 17),
       description: 'Monthly money market transfer',
       idempotencyKey: `seed:xfer-mm:${userId}:${monthIx}`,
     });
 
     // Interest accruals (savings 0.20%/mo ≈ 2.4% APY; money market 0.30%/mo)
-    const savBal = (await query(`SELECT account_ledger_balance($1)::text AS b`, [savings])).rows[0].b;
-    const mmBal  = (await query(`SELECT account_ledger_balance($1)::text AS b`, [mm])).rows[0].b;
+    const savBal = (await query(`SELECT account_ledger_balance($1)::text AS b`, [savings])).rows[0]
+      .b;
+    const mmBal = (await query(`SELECT account_ledger_balance($1)::text AS b`, [mm])).rows[0].b;
     const savInt = (Number(savBal) * 0.002).toFixed(2);
-    const mmInt  = (Number(mmBal) * 0.003).toFixed(2);
+    const mmInt = (Number(mmBal) * 0.003).toFixed(2);
     if (Number(savInt) > 0) {
       await adjustment({
-        accountId: savings, amount: savInt, direction: 'credit',
+        accountId: savings,
+        amount: savInt,
+        direction: 'credit',
         when: mISO(30, 23),
         description: 'Interest accrual',
         idempotencyKey: `seed:int-sav:${userId}:${monthIx}`,
@@ -341,7 +351,9 @@ export async function seedHistorical() {
     }
     if (Number(mmInt) > 0) {
       await adjustment({
-        accountId: mm, amount: mmInt, direction: 'credit',
+        accountId: mm,
+        amount: mmInt,
+        direction: 'credit',
         when: mISO(30, 23, 5),
         description: 'Interest accrual',
         idempotencyKey: `seed:int-mm:${userId}:${monthIx}`,
@@ -350,9 +362,11 @@ export async function seedHistorical() {
 
     // Quarterly dividends into investment account
     if (monthIx % 3 === 0) {
-      const div = jitter(rng, 6_500, 0.20).toFixed(2);
+      const div = jitter(rng, 6_500, 0.2).toFixed(2);
       await adjustment({
-        accountId: inv, amount: div, direction: 'credit',
+        accountId: inv,
+        amount: div,
+        direction: 'credit',
         when: mISO(15, 19),
         description: 'Quarterly investment dividend',
         idempotencyKey: `seed:dividend:${userId}:${monthIx}`,
@@ -373,9 +387,13 @@ export async function seedHistorical() {
   console.info('Seed complete — account balances:');
   for (const r of summary.rows) {
     total += Number(r.balance);
-    console.info(`  ${r.account_type.padEnd(14)} ${r.nickname.padEnd(28)} $${Number(r.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+    console.info(
+      `  ${r.account_type.padEnd(14)} ${r.nickname.padEnd(28)} $${Number(r.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+    );
   }
-  console.info(`  TOTAL                                       $${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+  console.info(
+    `  TOTAL                                       $${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+  );
   if (total < 4_000_000) {
     console.warn(`Warning: total ($${total.toFixed(2)}) is below $4,000,000 target.`);
   }

@@ -56,22 +56,32 @@ export function createQueueEvents(name, redisUrl) {
 // Domain events delivered at-least-once. Consumers dedupe on event id.
 
 export async function pollOutboxOnce({ publish, batchSize = 100 }) {
+  // Atomically claim a batch of undelivered outbox rows by marking them in
+  // a CTE. Using SKIP LOCKED ensures concurrent relays don't double-claim.
   const { rows } = await query(
-    `SELECT id, topic, payload
-       FROM outbox
-      WHERE delivered_at IS NULL
-      ORDER BY created_at
-      LIMIT $1
-      FOR UPDATE SKIP LOCKED`,
+    `WITH claimed AS (
+       SELECT id FROM outbox
+        WHERE delivered_at IS NULL
+        ORDER BY created_at
+        LIMIT $1
+        FOR UPDATE SKIP LOCKED
+     )
+     UPDATE outbox o SET delivered_at = now()
+       FROM claimed
+      WHERE o.id = claimed.id
+     RETURNING o.id, o.topic, o.payload`,
     [batchSize],
   );
   for (const row of rows) {
     try {
       await publish(row.topic, { id: row.id, ...row.payload });
-      await query(`UPDATE outbox SET delivered_at = now() WHERE id = $1`, [row.id]);
     } catch (err) {
+      // Roll back the claim and bump attempts so it retries on next tick.
       await query(
-        `UPDATE outbox SET attempts = attempts + 1, last_error = $2 WHERE id = $1`,
+        `UPDATE outbox SET delivered_at = NULL,
+                            attempts = attempts + 1,
+                            last_error = $2
+           WHERE id = $1`,
         [row.id, err.message],
       );
     }

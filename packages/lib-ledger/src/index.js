@@ -108,20 +108,31 @@ export async function postTransaction(input) {
     entries,
   } = input;
 
-  if (!idempotencyKey) throw errors.badRequest('idempotency_required', 'idempotencyKey is required.');
-  if (!Array.isArray(entries) || entries.length < 2) {
-    throw errors.badRequest('invalid_entries', 'At least two ledger entries are required.');
+  if (!idempotencyKey)
+    throw errors.badRequest('idempotency_required', 'idempotencyKey is required.');
+  if (!Array.isArray(entries) || entries.length < 1) {
+    throw errors.badRequest('invalid_entries', 'At least one ledger entry is required.');
   }
 
   // Balance check (debits == credits) for posted entries within this txn.
-  let signedSum = 0n;
+  // Pending entries are holds and don't need to balance until they post
+  // (e.g. ACH/wire outbound, customer withdrawal hold).
+  let postedSum = 0n;
+  let hasPosted = false;
   for (const e of entries) {
     const u = toUnits(e.amount);
     if (u <= 0n) throw errors.badRequest('invalid_entry_amount', 'Entry amount must be positive.');
-    signedSum += e.direction === 'credit' ? u : -u;
+    const entryStatus = e.status || status;
+    if (entryStatus === 'posted') {
+      hasPosted = true;
+      postedSum += e.direction === 'credit' ? u : -u;
+    }
   }
-  if (signedSum !== 0n) {
-    throw errors.badRequest('unbalanced_entries', 'Sum of debits must equal sum of credits.');
+  if (hasPosted && postedSum !== 0n) {
+    throw errors.badRequest(
+      'unbalanced_entries',
+      'Sum of posted debits must equal sum of posted credits.',
+    );
   }
 
   return withTransaction(async (client) => {
@@ -131,13 +142,15 @@ export async function postTransaction(input) {
       [idempotencyKey],
     );
     if (existing.rows[0]) {
-      return { transactionId: existing.rows[0].id, status: existing.rows[0].status, idempotent: true };
+      return {
+        transactionId: existing.rows[0].id,
+        status: existing.rows[0].status,
+        idempotent: true,
+      };
     }
 
     // Lock relevant accounts in deterministic order to avoid deadlocks.
-    const lockIds = Array.from(
-      new Set(entries.map((e) => e.accountId).filter(Boolean)),
-    ).sort();
+    const lockIds = Array.from(new Set(entries.map((e) => e.accountId).filter(Boolean))).sort();
     if (lockIds.length) {
       await client.query(
         `SELECT id FROM accounts WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE`,
@@ -153,10 +166,7 @@ export async function postTransaction(input) {
       }
     }
     for (const [accId, needed] of debitTotals) {
-      const { rows } = await client.query(
-        `SELECT status FROM accounts WHERE id = $1`,
-        [accId],
-      );
+      const { rows } = await client.query(`SELECT status FROM accounts WHERE id = $1`, [accId]);
       if (!rows[0]) throw errors.notFound('account_not_found', `Account ${accId} not found.`);
       if (rows[0].status !== 'active') {
         throw errors.conflict('account_inactive', `Account ${accId} is not active.`);
@@ -221,26 +231,27 @@ export async function postTransaction(input) {
     await client.query(
       `INSERT INTO transaction_events (transaction_id, event_type, payload)
        VALUES ($1, $2, $3)`,
-      [transactionId, `transaction.${status}`, JSON.stringify({ type, amount: fromUnits(toUnits(amount)) })],
+      [
+        transactionId,
+        `transaction.${status}`,
+        JSON.stringify({ type, amount: fromUnits(toUnits(amount)) }),
+      ],
     );
 
     // Write to outbox for at-least-once event delivery.
-    await client.query(
-      `INSERT INTO outbox (topic, payload) VALUES ($1, $2)`,
-      [
-        `transaction.${status}`,
-        JSON.stringify({
-          transactionId,
-          type,
-          status,
-          sourceAccountId,
-          destinationAccountId,
-          amount: fromUnits(toUnits(amount)),
-          currency,
-          initiatedByUserId,
-        }),
-      ],
-    );
+    await client.query(`INSERT INTO outbox (topic, payload) VALUES ($1, $2)`, [
+      `transaction.${status}`,
+      JSON.stringify({
+        transactionId,
+        type,
+        status,
+        sourceAccountId,
+        destinationAccountId,
+        amount: fromUnits(toUnits(amount)),
+        currency,
+        initiatedByUserId,
+      }),
+    ]);
 
     return { transactionId, status };
   });

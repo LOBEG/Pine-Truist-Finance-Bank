@@ -71,7 +71,9 @@ export function buildTransactionsRouter() {
       let nextCursor = null;
       if (rows.length === limit) {
         const last = rows[rows.length - 1];
-        nextCursor = Buffer.from(JSON.stringify({ ts: last.created_at, id: last.id })).toString('base64url');
+        nextCursor = Buffer.from(JSON.stringify({ ts: last.created_at, id: last.id })).toString(
+          'base64url',
+        );
       }
       res.json({ items: rows, nextCursor });
     }),
@@ -80,10 +82,9 @@ export function buildTransactionsRouter() {
   router.get(
     '/:id',
     asyncHandler(async (req, res) => {
-      const { rows } = await query(
-        `SELECT t.* FROM transactions t WHERE t.id = $1`,
-        [req.params.id],
-      );
+      const { rows } = await query(`SELECT t.* FROM transactions t WHERE t.id = $1`, [
+        req.params.id,
+      ]);
       const t = rows[0];
       if (!t) throw errors.notFound('transaction_not_found');
       // Authorization: user must own one of the involved accounts or be initiator.

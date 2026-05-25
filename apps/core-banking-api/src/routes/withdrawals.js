@@ -4,8 +4,9 @@ import { withdrawalBodySchema } from '@pine/lib-validation';
 import { query } from '@pine/lib-db';
 import { postTransaction } from '@pine/lib-ledger';
 import { writeAudit } from '../services/identity.js';
+import { getExternalClearingAccount } from '../services/clearing.js';
 
-export function buildWithdrawalsRouter({ publish }) {
+export function buildWithdrawalsRouter({ publish, kekB64 }) {
   const router = Router();
 
   router.post(
@@ -17,14 +18,18 @@ export function buildWithdrawalsRouter({ publish }) {
         throw errors.badRequest('idempotency_required', 'Idempotency-Key header required.');
 
       const { accountId, amount, method, notes } = req.body;
-      const acc = await query(
-        `SELECT id, status FROM accounts WHERE id = $1 AND user_id = $2`,
-        [accountId, req.user.id],
-      );
+      const acc = await query(`SELECT id, status FROM accounts WHERE id = $1 AND user_id = $2`, [
+        accountId,
+        req.user.id,
+      ]);
       if (!acc.rows[0]) throw errors.notFound('account_not_found');
       if (acc.rows[0].status !== 'active') throw errors.conflict('account_inactive');
 
-      // Place a hold via pending debit entry (no posting until admin approves).
+      const clearingId = await getExternalClearingAccount(kekB64);
+
+      // Place a balanced "hold" — pending debit on customer, pending credit
+      // on clearing. The pending debit reduces availability; nothing posts
+      // until admin approves and a separate disbursement is created.
       const hold = await postTransaction({
         type: 'withdrawal',
         status: 'pending',
@@ -33,7 +38,10 @@ export function buildWithdrawalsRouter({ publish }) {
         description: `Withdrawal hold (${method})`,
         sourceAccountId: accountId,
         initiatedByUserId: req.user.id,
-        entries: [{ accountId, direction: 'debit', amount, status: 'pending' }],
+        entries: [
+          { accountId, direction: 'debit', amount, status: 'pending' },
+          { accountId: clearingId, direction: 'credit', amount, status: 'pending' },
+        ],
       });
 
       const wr = await query(

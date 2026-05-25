@@ -1,5 +1,4 @@
 import express from 'express';
-import cookieParser from 'cookie-parser';
 import { loadConfig } from '@pine/lib-config';
 import { createLogger, httpLogger } from '@pine/lib-logger';
 import { createPool, query, shutdown as dbShutdown } from '@pine/lib-db';
@@ -72,7 +71,6 @@ if (config.security.trustProxy) app.set('trust proxy', 1);
 app.use(securityHeaders());
 app.use(corsMiddleware(config.cors.origins));
 app.use(express.json({ limit: '256kb' }));
-app.use(cookieParser());
 app.use(httpLogger(logger));
 
 healthRoutes(app, {
@@ -88,7 +86,7 @@ healthRoutes(app, {
 app.use('/api', globalIpLimiter(config.redis.url));
 
 // Auth router with login-specific limiter on /login.
-const authRouter = buildAuthRouter({ signAccess, sessions, config, logger, publish });
+const authRouter = buildAuthRouter({ signAccess, sessions, config, logger, publish, verifyJwt });
 app.use('/api/v1/auth/login', loginLimiter(config.redis.url));
 app.use('/api/v1/auth', authRouter);
 
@@ -103,9 +101,13 @@ app.use(
   auth,
   transferLimiter(config.redis.url),
   pinAttemptLimiter(config.redis.url),
-  buildTransfersRouter({ publish }),
+  buildTransfersRouter({ publish, kekB64: config.encryption.kekB64 }),
 );
-app.use('/api/v1/withdrawals', auth, buildWithdrawalsRouter({ publish }));
+app.use(
+  '/api/v1/withdrawals',
+  auth,
+  buildWithdrawalsRouter({ publish, kekB64: config.encryption.kekB64 }),
+);
 app.use(
   '/api/v1/counterparties',
   auth,
@@ -113,13 +115,10 @@ app.use(
 );
 app.use('/api/v1/pins', auth, buildPinsRouter());
 
-// MFA enroll/verify are inside auth router but require auth.
-app.post('/api/v1/auth/mfa/enroll', auth, (req, res, next) => {
-  authRouter.handle({ ...req, url: '/mfa/enroll' }, res, next);
-});
-
 // Fallthrough.
-app.use((req, _res, next) => next(errors.notFound('route_not_found', `No route ${req.method} ${req.path}`)));
+app.use((req, _res, next) =>
+  next(errors.notFound('route_not_found', `No route ${req.method} ${req.path}`)),
+);
 app.use(notFoundHandler());
 app.use(errorHandler(logger));
 
@@ -147,4 +146,4 @@ async function gracefulShutdown(signal) {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-void pool; // silence unused warning
+void pool;

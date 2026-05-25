@@ -14,8 +14,29 @@ import { loadUserPermissions, writeAudit } from '../services/identity.js';
 const ACCOUNT_LOCK_THRESHOLD = 10;
 const ACCOUNT_LOCK_MINUTES = 30;
 
-export function buildAuthRouter({ signAccess, sessions, config, logger, publish }) {
+export function buildAuthRouter({ signAccess, sessions, config, logger, publish, verifyJwt }) {
   const router = Router();
+
+  // Optional-auth helper for MFA endpoints — they require a valid access token.
+  const requireToken = (req, _res, next) => {
+    const h = req.headers.authorization || '';
+    const lower = h.toLowerCase();
+    if (!lower.startsWith('bearer ')) return next(errors.unauthorized('missing_token'));
+    const token = h.slice(7).trim();
+    if (!token) return next(errors.unauthorized('missing_token'));
+    try {
+      const claims = verifyJwt(token);
+      req.user = {
+        id: claims.sub,
+        email: claims.email,
+        roles: claims.roles || [],
+        permissions: claims.permissions || [],
+      };
+      next();
+    } catch {
+      next(errors.unauthorized('invalid_token'));
+    }
+  };
 
   router.post(
     '/register',
@@ -177,7 +198,9 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish 
       }
 
       const { roles, permissions } = await loadUserPermissions(next.userId);
-      const { rows } = await query(`SELECT email, mfa_enabled FROM users WHERE id = $1`, [next.userId]);
+      const { rows } = await query(`SELECT email, mfa_enabled FROM users WHERE id = $1`, [
+        next.userId,
+      ]);
       const u = rows[0];
       const accessToken = signAccess(
         { email: u.email, roles, permissions, sid: next.sessionId, mfa: !!u.mfa_enabled },
@@ -201,17 +224,16 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish 
     }),
   );
 
-  // MFA enrollment requires an authenticated session — wired in server.js.
   router.post(
     '/mfa/enroll',
+    requireToken,
     asyncHandler(async (req, res) => {
-      if (!req.user) throw errors.unauthorized();
       const secret = generateMfaSecret();
       const enc = encryptField(secret, config.encryption.kekB64);
-      await query(
-        `UPDATE users SET mfa_secret_encrypted = $2, mfa_enabled = FALSE WHERE id = $1`,
-        [req.user.id, enc],
-      );
+      await query(`UPDATE users SET mfa_secret_encrypted = $2, mfa_enabled = FALSE WHERE id = $1`, [
+        req.user.id,
+        enc,
+      ]);
       const otpAuthUrl = buildOtpAuthUrl({ secret, account: req.user.email });
       res.json({ secret, otpAuthUrl });
     }),
@@ -219,13 +241,12 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish 
 
   router.post(
     '/mfa/verify',
+    requireToken,
     validate({ body: mfaVerifyBodySchema }),
     asyncHandler(async (req, res) => {
-      if (!req.user) throw errors.unauthorized();
-      const { rows } = await query(
-        `SELECT mfa_secret_encrypted FROM users WHERE id = $1`,
-        [req.user.id],
-      );
+      const { rows } = await query(`SELECT mfa_secret_encrypted FROM users WHERE id = $1`, [
+        req.user.id,
+      ]);
       const secret = decryptField(rows[0]?.mfa_secret_encrypted, config.encryption.kekB64);
       if (!verifyTotp(secret, req.body.code))
         throw errors.unauthorized('invalid_mfa', 'Invalid MFA code.');

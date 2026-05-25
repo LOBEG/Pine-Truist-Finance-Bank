@@ -28,10 +28,7 @@ export async function consumePin({ userId, purpose, plaintextPin }) {
     if (!pin) throw errors.forbidden('no_active_pin', 'No active PIN. Contact support.');
 
     if (new Date(pin.expires_at) <= new Date()) {
-      await client.query(
-        `UPDATE transfer_pins SET status = 'expired' WHERE id = $1`,
-        [pin.id],
-      );
+      await client.query(`UPDATE transfer_pins SET status = 'expired' WHERE id = $1`, [pin.id]);
       throw errors.forbidden('pin_expired', 'PIN expired.');
     }
 

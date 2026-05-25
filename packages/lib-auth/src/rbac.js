@@ -32,7 +32,8 @@ export function requireRole(...allowed) {
 export function requireMfa() {
   return (req, _res, next) => {
     if (!req.user) return next(errors.unauthorized());
-    if (!req.user.mfaVerified) return next(errors.forbidden('mfa_required', 'MFA step-up required.'));
+    if (!req.user.mfaVerified)
+      return next(errors.forbidden('mfa_required', 'MFA step-up required.'));
     next();
   };
 }

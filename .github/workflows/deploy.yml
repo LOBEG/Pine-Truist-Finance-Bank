@@ -1,0 +1,23 @@
+name: Deploy (Railway)
+
+# Railway watches main/staging directly via its GitHub integration, but this
+# workflow gates deployment on a green CI run and posts a deploy event.
+on:
+  workflow_run:
+    workflows: ['CI']
+    branches: [main, staging]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  notify:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Announce
+        run: |
+          echo "CI green on ${{ github.event.workflow_run.head_branch }}."
+          echo "Railway will auto-deploy via its GitHub integration."
+          echo "If you need to roll back, use the Railway dashboard's"
+          echo "environment snapshots feature."

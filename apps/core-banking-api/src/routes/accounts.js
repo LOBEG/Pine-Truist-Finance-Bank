@@ -19,7 +19,7 @@ export function buildAccountsRouter() {
       );
       const accounts = await Promise.all(
         rows.map(async (a) => {
-          const bal = await computeBalance(a.id);
+          const b = await computeBalance(a.id);
           return {
             id: a.id,
             type: a.account_type,
@@ -29,7 +29,12 @@ export function buildAccountsRouter() {
             currency: a.currency,
             status: a.status,
             openedAt: a.opened_at,
-            balances: bal,
+            balances: {
+              available_balance: b.available,
+              ledger_balance: b.ledger,
+              pending_debits: b.pendingDebits,
+              pending_credits: b.pendingCredits,
+            },
           };
         }),
       );
@@ -58,7 +63,12 @@ export function buildAccountsRouter() {
         currency: a.currency,
         status: a.status,
         openedAt: a.opened_at,
-        balances: bal,
+        balances: {
+          available_balance: bal.available,
+          ledger_balance: bal.ledger,
+          pending_debits: bal.pendingDebits,
+          pending_credits: bal.pendingCredits,
+        },
       });
     }),
   );

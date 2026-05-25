@@ -93,7 +93,7 @@ function gcmDecrypt(key, iv, tag, ct) {
 }
 
 export function encryptField(plaintext, kekB64) {
-  if (plaintext == null) return null;
+  if (plaintext === null || plaintext === undefined) return null;
   const kek = decodeKek(kekB64);
   const dek = crypto.randomBytes(32);
   const pt = Buffer.isBuffer(plaintext) ? plaintext : Buffer.from(String(plaintext), 'utf8');
@@ -107,7 +107,7 @@ export function encryptField(plaintext, kekB64) {
 }
 
 export function decryptField(encoded, kekB64) {
-  if (encoded == null) return null;
+  if (encoded === null || encoded === undefined) return null;
   const kek = decodeKek(kekB64);
   const buf = Buffer.from(encoded, 'base64');
   const version = buf[0];

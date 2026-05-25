@@ -28,7 +28,10 @@ export const registerBodySchema = z.object({
 export const loginBodySchema = z.object({
   email,
   password,
-  mfaCode: z.string().regex(/^\d{6}$/).optional(),
+  mfaCode: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
   deviceFingerprint: z.string().max(128).optional(),
 });
 
@@ -116,8 +119,14 @@ export const paginationQuerySchema = z.object({
 
 export const transactionListQuerySchema = paginationQuerySchema.extend({
   accountId: uuid.optional(),
-  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   type: z.string().max(40).optional(),
   status: z.string().max(40).optional(),
 });

@@ -1,0 +1,21 @@
+{
+  "name": "@pine/api-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "http-proxy-middleware": "^3.0.3",
+    "express-rate-limit": "^7.4.1",
+    "rate-limit-redis": "^4.2.0",
+    "ioredis": "^5.4.1",
+    "@pine/lib-config": "*",
+    "@pine/lib-logger": "*",
+    "@pine/lib-http": "*",
+    "@pine/lib-auth": "*"
+  }
+}

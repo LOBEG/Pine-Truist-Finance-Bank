@@ -53,7 +53,10 @@ export function securityHeaders() {
 // --------------------- Middleware: CORS ---------------------
 
 export function corsMiddleware(originsCsv) {
-  const allowed = (originsCsv || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const allowed = (originsCsv || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
   return cors({
     origin(origin, cb) {
       if (!origin) return cb(null, true); // same-origin / curl
@@ -85,7 +88,11 @@ export function validate(schemas) {
       if (schemas.params) req.params = schemas.params.parse(req.params);
       next();
     } catch (err) {
-      next(new AppError(400, 'validation_error', 'Request validation failed.', { detail: err.issues || err.message }));
+      next(
+        new AppError(400, 'validation_error', 'Request validation failed.', {
+          detail: err.issues || err.message,
+        }),
+      );
     }
   };
 }
@@ -105,7 +112,10 @@ export function errorHandler(logger) {
       traceId: req.id,
     };
     if (status >= 500) {
-      logger.error({ err, req: { id: req.id, method: req.method, url: req.url } }, 'unhandled error');
+      logger.error(
+        { err, req: { id: req.id, method: req.method, url: req.url } },
+        'unhandled error',
+      );
     } else {
       logger.warn({ code: body.code, status, traceId: req.id }, body.title);
     }
@@ -116,7 +126,8 @@ export function errorHandler(logger) {
 // --------------------- 404 ---------------------
 
 export function notFoundHandler() {
-  return (req, _res, next) => next(errors.notFound('route_not_found', `No route ${req.method} ${req.path}`));
+  return (req, _res, next) =>
+    next(errors.notFound('route_not_found', `No route ${req.method} ${req.path}`));
 }
 
 // --------------------- Healthchecks ---------------------

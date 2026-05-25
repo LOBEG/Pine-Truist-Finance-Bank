@@ -7,8 +7,10 @@ import {
 } from '@pine/lib-validation';
 import { query } from '@pine/lib-db';
 import { postTransaction } from '@pine/lib-ledger';
+import { encryptField } from '@pine/lib-crypto';
 import { consumePin } from '../services/pin.js';
 import { writeAudit } from '../services/identity.js';
+import { getExternalClearingAccount } from '../services/clearing.js';
 
 function getIdempotencyKey(req) {
   const key = req.headers['idempotency-key'];
@@ -19,16 +21,17 @@ function getIdempotencyKey(req) {
 }
 
 async function assertAccountOwnership(userId, accountId) {
-  const { rows } = await query(
-    `SELECT id, status FROM accounts WHERE id = $1 AND user_id = $2`,
-    [accountId, userId],
-  );
+  const { rows } = await query(`SELECT id, status FROM accounts WHERE id = $1 AND user_id = $2`, [
+    accountId,
+    userId,
+  ]);
   if (!rows[0]) throw errors.notFound('account_not_found');
-  if (rows[0].status !== 'active') throw errors.conflict('account_inactive', 'Source account not active.');
+  if (rows[0].status !== 'active')
+    throw errors.conflict('account_inactive', 'Source account not active.');
   return rows[0];
 }
 
-export function buildTransfersRouter({ publish }) {
+export function buildTransfersRouter({ publish, kekB64 }) {
   const router = Router();
 
   // -------- Internal transfer --------
@@ -99,8 +102,16 @@ export function buildTransfersRouter({ publish }) {
     validate({ body: achTransferBodySchema }),
     asyncHandler(async (req, res) => {
       const idempotencyKey = getIdempotencyKey(req);
-      const { sourceAccountId, counterpartyId, amount, secCode, direction, effectiveDate, memo, pin } =
-        req.body;
+      const {
+        sourceAccountId,
+        counterpartyId,
+        amount,
+        secCode,
+        direction,
+        effectiveDate,
+        memo,
+        pin,
+      } = req.body;
 
       await assertAccountOwnership(req.user.id, sourceAccountId);
       const cp = await query(
@@ -115,7 +126,12 @@ export function buildTransfersRouter({ publish }) {
         plaintextPin: pin,
       });
 
-      // Pending status with pending ledger entries (hold). Worker posts on settlement.
+      // Two pending legs (balanced): customer side + external clearing.
+      // For ACH credit (sending money out): debit customer, credit clearing.
+      // For ACH debit (pulling money in):   credit customer, debit clearing.
+      const clearingId = await getExternalClearingAccount(kekB64);
+      const customerDir = direction === 'debit' ? 'credit' : 'debit';
+      const clearingDir = direction === 'debit' ? 'debit' : 'credit';
       const result = await postTransaction({
         type: direction === 'debit' ? 'ach_debit' : 'ach_credit',
         status: 'pending',
@@ -128,12 +144,8 @@ export function buildTransfersRouter({ publish }) {
         initiatedByUserId: req.user.id,
         pinAuthorizationId: pinId,
         entries: [
-          {
-            accountId: sourceAccountId,
-            direction: direction === 'debit' ? 'credit' : 'debit',
-            amount,
-            status: 'pending',
-          },
+          { accountId: sourceAccountId, direction: customerDir, amount, status: 'pending' },
+          { accountId: clearingId, direction: clearingDir, amount, status: 'pending' },
         ],
       });
 
@@ -185,6 +197,7 @@ export function buildTransfersRouter({ publish }) {
       const reviewThreshold = Number(JSON.parse(wireReviewSetting.rows[0]?.value || '"25000.00"'));
       const initialStatus = Number(amount) >= reviewThreshold ? 'pending_review' : 'pending';
 
+      const clearingId2 = await getExternalClearingAccount(kekB64);
       const result = await postTransaction({
         type: 'wire_domestic',
         status: initialStatus,
@@ -197,6 +210,7 @@ export function buildTransfersRouter({ publish }) {
         pinAuthorizationId: pinId,
         entries: [
           { accountId: sourceAccountId, direction: 'debit', amount, status: 'pending' },
+          { accountId: clearingId2, direction: 'credit', amount, status: 'pending' },
         ],
       });
 
@@ -211,8 +225,7 @@ export function buildTransfersRouter({ publish }) {
           beneficiary.address || null,
           beneficiary.bankName,
           beneficiary.routingNumber,
-          // We encrypt with a deterministic-marker. Real impl uses lib-crypto.encryptField with KEK.
-          beneficiary.accountNumber, // worker re-encrypts in detailed flow
+          encryptField(beneficiary.accountNumber, kekB64),
           reference || null,
         ],
       );

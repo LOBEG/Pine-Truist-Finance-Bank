@@ -2,6 +2,7 @@
   "name": "pine-bank",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Pine Bank — production-grade online banking infrastructure (Railway.app)",
   "license": "UNLICENSED",
   "engines": {
@@ -16,7 +17,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test --test-reporter=spec tests/unit",
+    "test": "node --test --test-reporter=spec 'tests/unit/**/*.test.js'",
     "migrate": "node db/cli.js migrate",
     "migrate:deploy": "node db/cli.js migrate",
     "migrate:status": "node db/cli.js status",
@@ -31,6 +32,7 @@
     "dev:web": "npm --workspace apps/web run dev"
   },
   "devDependencies": {
+    "@eslint/js": "^9.13.0",
     "eslint": "^9.13.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",

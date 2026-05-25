@@ -55,8 +55,7 @@ export function httpLogger(logger) {
       if (res.statusCode >= 400) return 'warn';
       return 'info';
     },
-    customSuccessMessage: (req, res) =>
-      `${req.method} ${req.url} ${res.statusCode}`,
+    customSuccessMessage: (req, res) => `${req.method} ${req.url} ${res.statusCode}`,
     customErrorMessage: (req, res, err) =>
       `${req.method} ${req.url} ${res.statusCode} ${err?.message ?? ''}`,
     serializers: {

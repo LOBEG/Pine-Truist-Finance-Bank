@@ -29,7 +29,6 @@ export function createPool({ url, ssl = 'require', poolMin = 2, poolMax = 20 } =
   });
 
   pool.on('error', (err) => {
-    // eslint-disable-next-line no-console
     console.error('[lib-db] Idle client error', err);
   });
 
@@ -52,7 +51,7 @@ export async function query(text, params) {
 export async function withTransaction(fn, { isolation = 'READ COMMITTED', maxRetries = 3 } = {}) {
   const p = getPool();
   let attempt = 0;
-  // eslint-disable-next-line no-constant-condition
+
   while (true) {
     const client = await p.connect();
     try {
