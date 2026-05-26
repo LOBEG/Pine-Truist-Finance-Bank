@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../store/auth.js';
+import { BrandLogo } from '../components/Brand.jsx';
 
 export function Login() {
   const { login } = useAuth();
@@ -41,86 +42,102 @@ export function Login() {
   }
 
   return (
-    <div className="max-w-md mx-auto">
-      <div className="card">
-        <h1 className="text-2xl font-bold text-pine-900 mb-1">Welcome back</h1>
-        <p className="text-sm text-pine-700 mb-6">
-          Sign in to your Pine Truist Finance Bank account.
-        </p>
+    <div className="min-h-screen bg-[#1b2e4a] flex flex-col">
+      {/* Header */}
+      <header className="px-6 py-5">
+        <Link to="/">
+          <BrandLogo variant="dark" />
+        </Link>
+      </header>
 
-        {registered && (
-          <div className="mb-4 text-sm text-pine-800 bg-pine-50 ring-1 ring-pine-200 rounded-lg p-3">
-            Account created! Sign in to get started.
+      {/* Main */}
+      <div className="flex-1 flex items-center justify-center px-4 pb-12">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-pine-900">Welcome Back</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Sign in to your Pine Truist Finance Bank account
+            </p>
           </div>
-        )}
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <label className="label" htmlFor="login-username">
-              Username
-            </label>
-            <input
-              id="login-username"
-              className="input"
-              type="text"
-              required
-              autoFocus
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-          <div>
-            <div className="flex items-baseline justify-between mb-1">
-              <label className="label mb-0" htmlFor="login-password">
-                Password
-              </label>
-              <Link to="#" className="text-xs text-pine-700 hover:text-pine-900">
-                Forgot password?
-              </Link>
-            </div>
-            <input
-              id="login-password"
-              className="input"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              id="remember"
-              type="checkbox"
-              className="rounded border-pine-300 text-pine-700 focus:ring-pine-500"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-            />
-            <label htmlFor="remember" className="text-sm text-pine-700 cursor-pointer">
-              Remember this device
-            </label>
-          </div>
-          {error && (
-            <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg p-3">
-              {error}
+          {registered && (
+            <div className="mb-4 text-sm text-pine-800 bg-pine-50 ring-1 ring-pine-200 rounded-lg p-3">
+              Account created successfully! Sign in to get started.
             </div>
           )}
-          <button className="btn-primary w-full" type="submit" disabled={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
 
-        <div className="mt-4 flex flex-col gap-2 text-sm text-pine-700">
-          <Link to="#" className="hover:text-pine-900">
-            Forgot username?
-          </Link>
-          <span>
-            New customer?{' '}
-            <Link className="text-pine-800 font-semibold" to="/register">
-              Open an account
+          <form onSubmit={onSubmit} className="space-y-5">
+            <div>
+              <label
+                className="block text-sm font-medium text-gray-700 mb-1"
+                htmlFor="login-username"
+              >
+                Username
+              </label>
+              <input
+                id="login-username"
+                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-pine-600 focus:ring-2 focus:ring-pine-100"
+                type="text"
+                required
+                autoFocus
+                autoComplete="username"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div>
+              <div className="flex items-baseline justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700" htmlFor="login-password">
+                  Password
+                </label>
+                <Link to="#" className="text-xs text-pine-600 hover:text-pine-800">
+                  Forgot password?
+                </Link>
+              </div>
+              <input
+                id="login-password"
+                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-pine-600 focus:ring-2 focus:ring-pine-100"
+                type="password"
+                required
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="remember"
+                type="checkbox"
+                className="rounded border-gray-300 text-pine-700 focus:ring-pine-500"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+              />
+              <label htmlFor="remember" className="text-sm text-gray-600 cursor-pointer">
+                Remember this device
+              </label>
+            </div>
+            {error && (
+              <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg p-3">
+                {error}
+              </div>
+            )}
+            <button
+              className="w-full bg-[#3a8f5c] hover:bg-[#2f7a4d] text-white font-bold py-3 rounded-lg text-sm transition"
+              type="submit"
+              disabled={busy}
+            >
+              {busy ? 'Signing in…' : 'Sign In'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-sm text-gray-600">
+            <span>Don&apos;t have an account? </span>
+            <Link className="text-pine-700 font-semibold hover:text-pine-900" to="/register">
+              Open an Account
             </Link>
-          </span>
+          </div>
         </div>
       </div>
     </div>
