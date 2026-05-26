@@ -33,20 +33,15 @@ RUN addgroup -S pine && adduser -S pine -G pine
 WORKDIR /app
 
 # Only copy the built dist and the minimal server manifest
-COPY --from=builder /app/apps/web/dist       ./apps/web/dist
-COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
-COPY --from=builder /app/node_modules        ./node_modules
-COPY package.json ./
+COPY --from=builder --chown=pine:pine /app/apps/web/dist       ./apps/web/dist
+COPY --from=builder --chown=pine:pine /app/apps/web/package.json ./apps/web/package.json
+COPY --from=builder --chown=pine:pine /app/apps/web/vite.config.js ./apps/web/vite.config.js
+COPY --from=builder --chown=pine:pine /app/node_modules        ./node_modules
+COPY --chown=pine:pine package.json ./
 
 USER pine
 
 ENV NODE_ENV=production
-ENV PORT=3000
-
-EXPOSE 3000
-
-HEALTHCHECK --interval=20s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -qO- http://localhost:3000/ || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["npm", "--workspace=apps/web", "run", "preview"]
