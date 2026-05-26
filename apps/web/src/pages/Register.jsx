@@ -235,7 +235,9 @@ export function Register() {
           <p className="inline-flex rounded-full border border-gold-400/40 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-gold-400 mb-5">
             Open a protected account
           </p>
-          <h2 className="text-4xl font-extrabold leading-tight mb-4">Start with bank-grade onboarding.</h2>
+          <h2 className="text-4xl font-extrabold leading-tight mb-4">
+            Start with bank-grade onboarding.
+          </h2>
           <p className="text-slate-200">
             We collect the essentials for identity verification, account setup, and fraud protection
             so your Pine Truist account is ready for secure digital banking.

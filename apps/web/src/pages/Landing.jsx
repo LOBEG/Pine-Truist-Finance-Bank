@@ -196,7 +196,9 @@ export function Landing() {
         <div className="mx-auto max-w-5xl">
           <div className="text-center mb-10">
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-pine-600">Services</p>
-            <h2 className="text-3xl font-extrabold text-pine-900 mt-2">Banking that feels secure</h2>
+            <h2 className="text-3xl font-extrabold text-pine-900 mt-2">
+              Banking that feels secure
+            </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {serviceCards.map((card, index) => {
@@ -289,7 +291,9 @@ export function Landing() {
         <div className="mx-auto max-w-5xl mt-8 grid md:grid-cols-3 gap-4 text-sm">
           <div id="privacy" className="rounded-xl bg-white/5 p-4">
             <h3 className="font-bold text-white mb-2">Privacy Policy</h3>
-            <p>Customer data is protected with encryption, strict access controls, and audit logs.</p>
+            <p>
+              Customer data is protected with encryption, strict access controls, and audit logs.
+            </p>
           </div>
           <div id="terms" className="rounded-xl bg-white/5 p-4">
             <h3 className="font-bold text-white mb-2">Terms &amp; Conditions</h3>
@@ -297,7 +301,9 @@ export function Landing() {
           </div>
           <div id="contact" className="rounded-xl bg-white/5 p-4">
             <h3 className="font-bold text-white mb-2">Contact</h3>
-            <p>Reach Pine Truist support any time for account access, onboarding, or service help.</p>
+            <p>
+              Reach Pine Truist support any time for account access, onboarding, or service help.
+            </p>
           </div>
         </div>
         <p className="text-center text-xs text-gray-500 mt-4">

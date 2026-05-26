@@ -74,9 +74,7 @@ export function Login() {
         <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mx-auto ring-1 ring-white/40">
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-pine-900">Welcome Back</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Sign in with your username or admin email
-            </p>
+            <p className="text-sm text-gray-500 mt-1">Sign in with your username or admin email</p>
           </div>
 
           {registered && (
