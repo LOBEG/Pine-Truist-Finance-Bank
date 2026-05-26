@@ -26,7 +26,8 @@ export function ipAllowlist(allowlistCsv) {
     const raw = (req.headers['cf-connecting-ip'] || req.ip || '').toString();
     // Normalise IPv4-mapped IPv6 ("::ffff:1.2.3.4") to plain IPv4.
     const ip = raw.startsWith('::ffff:') ? raw.slice(7) : raw;
-    if (!ip || !rules.some((rule) => rule.match(ip))) {
+    const family = net.isIP(ip) || null;
+    if (!family || !rules.some((rule) => rule.match(ip, family))) {
       return next(errors.forbidden('ip_not_allowed', 'Source IP not allowed.'));
     }
     next();
@@ -46,8 +47,7 @@ function parseRule(entry) {
     const mask = bits === 0 ? 0n : ((1n << BigInt(bits)) - 1n) << BigInt(total - bits);
     const networkMasked = network & mask;
     return {
-      match(candidate) {
-        const candFamily = net.isIP(candidate) || null;
+      match(candidate, candFamily) {
         if (candFamily !== family) return false;
         const candInt = ipToBigInt(candidate, family);
         return (candInt & mask) === networkMasked;
@@ -59,8 +59,7 @@ function parseRule(entry) {
   const family = net.isIP(entry);
   const target = ipToBigInt(entry, family);
   return {
-    match(candidate) {
-      const candFamily = net.isIP(candidate) || null;
+    match(candidate, candFamily) {
       if (candFamily !== family) return false;
       return ipToBigInt(candidate, family) === target;
     },
