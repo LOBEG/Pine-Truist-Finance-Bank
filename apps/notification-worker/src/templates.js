@@ -7,7 +7,7 @@
  */
 export const TEMPLATES = {
   'transaction.posted': ({ amount, type }) =>
-    `A transaction of $${amount} (${type}) has posted to your Pine Bank account.`,
+    `A transaction of $${amount} (${type}) has posted to your Pine Truist Finance Bank account.`,
   'transaction.flagged': ({ amount }) =>
     `Your $${amount} transaction is under review and will be released shortly.`,
   'withdrawal.requested': ({ amount }) =>
@@ -18,7 +18,7 @@ export const TEMPLATES = {
   'pin.issued': ({ purpose }) =>
     `A new ${purpose} PIN has been issued to you. Check your secure messages.`,
   'auth.login.succeeded': ({ ip }) =>
-    `New sign-in to your Pine Bank account (IP ${ip || 'unknown'}).`,
+    `New sign-in to your Pine Truist Finance Bank account (IP ${ip || 'unknown'}).`,
 };
 
 export function renderTemplate(name, payload) {

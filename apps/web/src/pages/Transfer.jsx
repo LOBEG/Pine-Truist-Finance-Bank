@@ -360,7 +360,7 @@ function AchTab({ accounts }) {
       {/* ACH transfer form */}
       <form onSubmit={handleSubmitRequest} className="space-y-4">
         <div>
-          <label className="label">From account (Pine Bank)</label>
+          <label className="label">From account (Pine Truist Finance Bank)</label>
           <select
             required
             className="input"

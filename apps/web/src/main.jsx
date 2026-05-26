@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './store/auth.js';
@@ -13,8 +13,13 @@ import { Wire } from './pages/Wire.jsx';
 import { Deposit } from './pages/Deposit.jsx';
 import { Withdraw } from './pages/Withdraw.jsx';
 import { Notifications } from './pages/Notifications.jsx';
-import { Admin } from './pages/Admin.jsx';
 import './styles.css';
+
+// Configurable internal base path (default: /ops). Never linked publicly.
+const INTERNAL_BASE_PATH = import.meta.env.VITE_INTERNAL_BASE_PATH || '/ops';
+
+// Code-split internal operations dashboard (not shipped with public bundle)
+const OpsConsole = React.lazy(() => import('./internal/OpsConsole.jsx'));
 
 const REALTIME_NOTIF_EVENTS = [
   'transaction.posted',
@@ -25,12 +30,11 @@ const REALTIME_NOTIF_EVENTS = [
   'withdrawal.rejected',
 ];
 
-function Header() {
-  const { user, logout, roles = [] } = useAuth();
+function CustomerHeader() {
+  const { user, logout } = useAuth();
   const { unread, push } = useNotifications();
   const nav = useNavigate();
 
-  // Wire global notification push so the badge stays live everywhere
   const notifHandlers = React.useMemo(
     () =>
       REALTIME_NOTIF_EVENTS.reduce((acc, ev) => {
@@ -42,9 +46,7 @@ function Header() {
   useRealtime(notifHandlers);
 
   if (!user) return null;
-  const isAdmin = roles.some((r) =>
-    ['admin', 'super_admin', 'compliance_officer', 'support'].includes(r),
-  );
+
   return (
     <header className="bg-pine-800 text-white">
       <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
@@ -52,7 +54,7 @@ function Header() {
           <span className="inline-block w-7 h-7 rounded-lg bg-pine-50 text-pine-800 grid place-items-center font-extrabold">
             P
           </span>
-          Pine Bank
+          Pine Truist Finance Bank
         </Link>
         <nav className="flex items-center gap-4 text-sm flex-wrap">
           <Link to="/" className="hover:text-pine-100">
@@ -81,11 +83,6 @@ function Header() {
               </span>
             )}
           </Link>
-          {isAdmin && (
-            <Link to="/admin" className="hover:text-pine-100">
-              Admin
-            </Link>
-          )}
           <button
             onClick={async () => {
               await logout();
@@ -108,6 +105,25 @@ function RequireAuth({ children }) {
   return children;
 }
 
+function RequireInternalAuth({ children }) {
+  const { user, loading, roles = [] } = useAuth();
+  if (loading) return <div className="p-10 text-center text-pine-700">Loading…</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  const isInternal = roles.some((r) =>
+    ['admin', 'super_admin', 'compliance_officer', 'auditor', 'support'].includes(r),
+  );
+  if (!isInternal) return <Navigate to="/" replace />;
+  return children;
+}
+
+function InternalLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="text-slate-400">Loading secure console…</div>
+    </div>
+  );
+}
+
 function App() {
   const { bootstrap } = useAuth();
   React.useEffect(() => {
@@ -115,78 +131,91 @@ function App() {
   }, [bootstrap]);
   return (
     <BrowserRouter>
-      <Header />
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/"
-            element={
-              <RequireAuth>
-                <Dashboard />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/transactions"
-            element={
-              <RequireAuth>
-                <Transactions />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/transfer"
-            element={
-              <RequireAuth>
-                <Transfer />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/deposit"
-            element={
-              <RequireAuth>
-                <Deposit />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/wire"
-            element={
-              <RequireAuth>
-                <Wire />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <RequireAuth>
-                <Notifications />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/withdraw"
-            element={
-              <RequireAuth>
-                <Withdraw />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/admin/*"
-            element={
-              <RequireAuth>
-                <Admin />
-              </RequireAuth>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
+      <Routes>
+        {/* Internal Operations Dashboard — separate layout, code-split */}
+        <Route
+          path={`${INTERNAL_BASE_PATH}/*`}
+          element={
+            <Suspense fallback={<InternalLoadingFallback />}>
+              <RequireInternalAuth>
+                <OpsConsole basePath={INTERNAL_BASE_PATH} />
+              </RequireInternalAuth>
+            </Suspense>
+          }
+        />
+        {/* Public Customer Platform */}
+        <Route
+          path="/*"
+          element={
+            <>
+              <CustomerHeader />
+              <main className="mx-auto max-w-6xl px-4 py-8">
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route
+                    path="/"
+                    element={
+                      <RequireAuth>
+                        <Dashboard />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/transactions"
+                    element={
+                      <RequireAuth>
+                        <Transactions />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/transfer"
+                    element={
+                      <RequireAuth>
+                        <Transfer />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/deposit"
+                    element={
+                      <RequireAuth>
+                        <Deposit />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/wire"
+                    element={
+                      <RequireAuth>
+                        <Wire />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/notifications"
+                    element={
+                      <RequireAuth>
+                        <Notifications />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route
+                    path="/withdraw"
+                    element={
+                      <RequireAuth>
+                        <Withdraw />
+                      </RequireAuth>
+                    }
+                  />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </main>
+            </>
+          }
+        />
+      </Routes>
     </BrowserRouter>
   );
 }

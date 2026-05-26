@@ -1,0 +1,14 @@
+# Pine Truist Finance Bank - robots.txt
+User-agent: *
+Allow: /
+
+# Do not index secure internal areas
+Disallow: /ops
+Disallow: /ops/
+Disallow: /secure-control
+Disallow: /secure-control/
+Disallow: /api/
+Disallow: /*.json$
+
+# Sitemap location
+Sitemap: https://www.pinetruistfinancebank.com/sitemap.xml

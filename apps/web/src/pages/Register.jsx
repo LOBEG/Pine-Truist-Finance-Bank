@@ -31,7 +31,7 @@ export function Register() {
     <div className="max-w-md mx-auto">
       <div className="card">
         <h1 className="text-2xl font-bold text-pine-900 mb-1">Open an account</h1>
-        <p className="text-sm text-pine-700 mb-6">Pine Bank, member FDIC. Equal Housing Lender.</p>
+        <p className="text-sm text-pine-700 mb-6">Pine Truist Finance Bank, member FDIC. Equal Housing Lender.</p>
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label className="label">Full name</label>

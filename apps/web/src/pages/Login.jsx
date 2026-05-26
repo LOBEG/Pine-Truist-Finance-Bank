@@ -30,7 +30,7 @@ export function Login() {
     <div className="max-w-md mx-auto">
       <div className="card">
         <h1 className="text-2xl font-bold text-pine-900 mb-1">Welcome back</h1>
-        <p className="text-sm text-pine-700 mb-6">Sign in to your Pine Bank account.</p>
+        <p className="text-sm text-pine-700 mb-6">Sign in to your Pine Truist Finance Bank account.</p>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="label">Email</label>
