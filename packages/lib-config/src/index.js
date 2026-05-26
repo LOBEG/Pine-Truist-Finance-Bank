@@ -141,7 +141,6 @@ export function loadConfig({ serviceName, extraSchema = {} }) {
   if (config.get('env') === 'production') {
     const required = [
       'database.url',
-      'redis.url',
       'jwt.privateKeyB64',
       'jwt.publicKeyB64',
       'encryption.kekB64',
