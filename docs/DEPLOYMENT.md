@@ -101,13 +101,10 @@ openssl rand -base64 32
 # Link CLI to your project
 railway link
 
-# Add PostgreSQL plugin
+# Add PostgreSQL plugin (only database needed - no Redis required)
 railway add --plugin postgresql
 
-# Add Redis plugin
-railway add --plugin redis
-
-# Railway sets DATABASE_URL and REDIS_URL automatically via its plugin system.
+# Railway sets DATABASE_URL automatically via its plugin system.
 # Verify:
 railway variables --service core-banking-api
 ```
@@ -122,7 +119,6 @@ In the Railway dashboard, navigate to each service → Variables and set:
 NODE_ENV=production
 LOG_LEVEL=info
 DATABASE_URL=${{Postgres.DATABASE_URL}}     # Railway reference syntax
-REDIS_URL=${{Redis.REDIS_URL}}
 ```
 
 **core-banking-api (and admin-api):**
@@ -189,12 +185,36 @@ you can also trigger it manually:
 railway run --service core-banking-api node db/cli.js migrate
 ```
 
-### 3.5 Bootstrap the Admin User
+### 3.5 Bootstrap the Admin User (Automatic)
+
+The admin user is bootstrapped automatically at server startup when enabled.
+
+**Step 1: Add these env vars for the first deploy only:**
+
+```
+ADMIN_BOOTSTRAP_ENABLED=true
+ADMIN_EMAIL=admin@pinebank.com
+ADMIN_PASSWORD=<strong-16+-character-password-with-uppercase-lowercase-digit>
+```
+
+**Step 2: Deploy once** — the admin user is created at startup.
+
+**Step 3: After first deploy**, set `ADMIN_BOOTSTRAP_ENABLED=false` (or remove it).
+
+**IMPORTANT SECURITY NOTES:**
+
+- Password must be ≥16 chars with uppercase, lowercase, and digit
+- Environment credentials are NEVER used for login authentication
+- Login always authenticates against the database password hash
+- Admin must change password and enroll MFA on first login
+- See `docs/admin-bootstrap.md` for full documentation
+
+**Alternative: Manual CLI Bootstrap**
 
 ```bash
 railway run --service core-banking-api \
-  BOOTSTRAP_ADMIN_EMAIL=admin@pinebank.com \
-  BOOTSTRAP_ADMIN_PASSWORD=<strong-password> \
+  ADMIN_EMAIL=admin@pinebank.com \
+  ADMIN_PASSWORD=<strong-password> \
   node scripts/create-admin.js
 ```
 

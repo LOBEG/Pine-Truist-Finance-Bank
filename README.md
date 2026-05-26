@@ -5,14 +5,14 @@ for **Railway.app** deployment. Implements the full architecture described in
 [`docs/architecture.md`](docs/architecture.md):
 
 - Node.js + Express microservices (`core-banking-api`, `admin-api`,
-  `api-gateway`, `realtime-gateway`) and BullMQ-backed workers
+  `api-gateway`, `realtime-gateway`) and pg-boss-backed workers
   (`notification-worker`, `transaction-worker`, `fraud-engine`,
   `audit-worker`, `scheduler`).
 - React + TailwindCSS + Vite single-page application (`apps/web`).
 - PostgreSQL 16 with a strict **double-entry ledger**, append-only audit log,
   monthly-partitioned tables, and per-column encryption-at-rest of PII.
-- Redis 7 for caching, pub/sub, rate limiting, BullMQ queues, and the
-  Socket.IO adapter.
+- **Fully Postgres-native** — no Redis required. Queues (pg-boss), pub/sub
+  (LISTEN/NOTIFY), rate limiting, and Socket.IO coordination all use Postgres.
 - Argon2id passwords + 6-digit admin-issued single-use **transfer PINs** +
   RS256 JWT access tokens + rotating refresh tokens with reuse detection.
 - BSA/AML, Reg E, Reg CC, GLBA, PCI/SOC2-aligned audit and retention controls.
@@ -37,9 +37,8 @@ pine-bank/
 # 1. Install deps (npm workspaces installs every workspace)
 npm install
 
-# 2. Bring up Postgres + Redis (or use Railway plugins)
+# 2. Bring up Postgres (no Redis needed)
 docker run -d --name pine-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16-alpine
-docker run -d --name pine-redis -p 6379:6379 redis:7-alpine
 
 # 3. Configure environment
 cp .env.example .env
@@ -48,9 +47,15 @@ node scripts/rotate-keys.js >> .env   # generates JWT keypair + KEK + pepper
 # 4. Apply migrations
 npm run migrate
 
-# 5. Bootstrap an admin
-BOOTSTRAP_ADMIN_EMAIL=admin@pinebank.local \
-BOOTSTRAP_ADMIN_PASSWORD='change-me-very-long-passphrase' \
+# 5. Bootstrap an admin (option A: automatic at startup)
+ADMIN_BOOTSTRAP_ENABLED=true \
+ADMIN_EMAIL=admin@pinebank.local \
+ADMIN_PASSWORD='Change-Me-Very-Long-Passphrase-123' \
+npm run dev:api
+
+# 5. Bootstrap an admin (option B: manual CLI)
+ADMIN_EMAIL=admin@pinebank.local \
+ADMIN_PASSWORD='Change-Me-Very-Long-Passphrase-123' \
 npm run create-admin
 
 # 6. (Optional) load 2-year historical seed
@@ -82,7 +87,7 @@ deployment, secrets, blue/green strategy, and rollback.
 - Append-only `audit_logs` enforced at the database level.
 - Double-entry ledger invariant enforced via a deferred constraint trigger;
   every money-movement endpoint requires an idempotency key.
-- Redis-backed rate limits on login (5/min/IP, 10/hour/email),
+- Postgres-backed rate limits on login (5/min/IP, 10/hour/email),
   PIN attempts (3/PIN, 10/hour/user), transfers (20/min/user), and a
   global IP cap.
 - `admin-api` is IP-allowlisted; in production it must sit behind Cloudflare
@@ -93,6 +98,8 @@ deployment, secrets, blue/green strategy, and rollback.
 - [`docs/architecture.md`](docs/architecture.md) — full system design.
 - [`docs/api/openapi.yaml`](docs/api/openapi.yaml) — REST API spec.
 - [`docs/runbooks/`](docs/runbooks/) — operational runbooks.
+- [`docs/admin-bootstrap.md`](docs/admin-bootstrap.md) — admin bootstrap
+  documentation (one-time setup, security notes).
 - [`docs/production-readiness.md`](docs/production-readiness.md) — go-live
   checklist (the same one in the plan, with verification status).
 

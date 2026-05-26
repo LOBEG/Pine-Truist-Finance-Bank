@@ -52,9 +52,8 @@ function isoDate(d) {
 }
 
 async function ensureUser() {
-  const email = process.env.BOOTSTRAP_ADMIN_EMAIL || 'demo@pinebank.com';
-  const password =
-    process.env.BOOTSTRAP_ADMIN_PASSWORD || crypto.randomBytes(18).toString('base64url');
+  const email = process.env.ADMIN_EMAIL || 'demo@pinebank.com';
+  const password = process.env.ADMIN_PASSWORD || crypto.randomBytes(18).toString('base64url');
 
   const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
   if (existing.rows[0]) return existing.rows[0].id;

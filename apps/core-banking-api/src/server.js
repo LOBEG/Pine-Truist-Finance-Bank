@@ -17,6 +17,7 @@ import { createPublisher } from '@pine/lib-events';
 import { startOutboxRelay, initQueue, shutdownQueue } from '@pine/lib-queue';
 
 import { SessionService } from './services/session.js';
+import { bootstrapAdmin } from './services/adminBootstrap.js';
 import { buildAuthRouter } from './routes/auth.js';
 import { buildAccountsRouter } from './routes/accounts.js';
 import { buildTransactionsRouter } from './routes/transactions.js';
@@ -53,6 +54,27 @@ logger.info({ poolMax: config.database.poolMax }, 'db pool initialized');
 // Initialize pg-boss queue (Postgres-native, no Redis required)
 await initQueue(config.database.url);
 logger.info('pg-boss queue initialized');
+
+// Admin bootstrap: create first admin user if enabled and none exists.
+// This runs ONCE at startup before HTTP listening starts.
+// IMPORTANT: Admin credentials in env are NEVER used for login authentication.
+// Login always authenticates against the database password_hash via argon2.verify.
+try {
+  const bootstrapResult = await bootstrapAdmin({ logger });
+  if (bootstrapResult.created) {
+    logger.info('admin bootstrap completed: super_admin user created');
+  } else if (bootstrapResult.reason === 'admin_exists') {
+    logger.debug('admin bootstrap: existing admin detected, no action taken');
+  }
+} catch (bootstrapErr) {
+  // If bootstrap is enabled and fails, this is a critical startup error
+  if (process.env.ADMIN_BOOTSTRAP_ENABLED === 'true') {
+    logger.fatal({ err: bootstrapErr.message }, 'admin bootstrap failed - exiting');
+    process.exit(1);
+  }
+  // If not enabled, log and continue (this shouldn't happen)
+  logger.warn({ err: bootstrapErr.message }, 'admin bootstrap error (bootstrap not enabled)');
+}
 
 const signAccess = createJwtSigner({
   privateKeyB64: config.jwt.privateKeyB64,

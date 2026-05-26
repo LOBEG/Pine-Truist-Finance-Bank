@@ -4,22 +4,25 @@
  * password change on first login + mandatory MFA enrollment.
  *
  * Usage:
- *   BOOTSTRAP_ADMIN_EMAIL=admin@pinebank.com \
- *   BOOTSTRAP_ADMIN_PASSWORD='use-a-long-passphrase' \
+ *   ADMIN_EMAIL=admin@pinebank.com \
+ *   ADMIN_PASSWORD='use-a-long-passphrase' \
  *   node scripts/create-admin.js
+ *
+ * NOTE: For automated bootstrap at server startup, use ADMIN_BOOTSTRAP_ENABLED=true
+ * with the core-banking-api server. This script is for manual/CLI admin creation.
  */
 import { createPool, query, shutdown } from '@pine/lib-db';
 import { hashPassword } from '@pine/lib-crypto';
 
 async function main() {
-  const email = process.env.BOOTSTRAP_ADMIN_EMAIL;
-  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
   if (!email || !password) {
-    console.error('BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD are required.');
+    console.error('ADMIN_EMAIL and ADMIN_PASSWORD are required.');
     process.exit(2);
   }
   if (password.length < 16) {
-    console.error('BOOTSTRAP_ADMIN_PASSWORD must be at least 16 characters.');
+    console.error('ADMIN_PASSWORD must be at least 16 characters.');
     process.exit(2);
   }
 

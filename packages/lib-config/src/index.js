@@ -121,11 +121,12 @@ export function loadConfig({ serviceName, extraSchema = {} }) {
       trustProxy: { format: Boolean, default: true, env: 'RATE_LIMIT_TRUST_PROXY' },
     },
     bootstrap: {
-      adminEmail: { format: String, default: '', env: 'BOOTSTRAP_ADMIN_EMAIL' },
+      enabled: { format: Boolean, default: false, env: 'ADMIN_BOOTSTRAP_ENABLED' },
+      adminEmail: { format: String, default: '', env: 'ADMIN_EMAIL' },
       adminPassword: {
         format: String,
         default: '',
-        env: 'BOOTSTRAP_ADMIN_PASSWORD',
+        env: 'ADMIN_PASSWORD',
         sensitive: true,
       },
       runHistoricalSeed: { format: Boolean, default: false, env: 'RUN_HISTORICAL_SEED' },
