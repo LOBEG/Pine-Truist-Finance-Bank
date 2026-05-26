@@ -38,7 +38,7 @@ function parseRule(entry) {
     const [addr, bitsStr] = entry.split('/');
     const bits = Number(bitsStr);
     if (!Number.isInteger(bits) || bits < 0) return null;
-    const family = net.isIPv6(addr) ? 6 : net.isIPv4(addr) ? 4 : null;
+    const family = net.isIP(addr) || null;
     if (!family) return null;
     if ((family === 4 && bits > 32) || (family === 6 && bits > 128)) return null;
     const network = ipToBigInt(addr, family);
@@ -47,7 +47,7 @@ function parseRule(entry) {
     const networkMasked = network & mask;
     return {
       match(candidate) {
-        const candFamily = net.isIPv6(candidate) ? 6 : net.isIPv4(candidate) ? 4 : null;
+        const candFamily = net.isIP(candidate) || null;
         if (candFamily !== family) return false;
         const candInt = ipToBigInt(candidate, family);
         return (candInt & mask) === networkMasked;
@@ -56,11 +56,11 @@ function parseRule(entry) {
   }
   // Single IP literal.
   if (!net.isIP(entry)) return null;
-  const family = net.isIPv6(entry) ? 6 : 4;
+  const family = net.isIP(entry);
   const target = ipToBigInt(entry, family);
   return {
     match(candidate) {
-      const candFamily = net.isIPv6(candidate) ? 6 : net.isIPv4(candidate) ? 4 : null;
+      const candFamily = net.isIP(candidate) || null;
       if (candFamily !== family) return false;
       return ipToBigInt(candidate, family) === target;
     },
