@@ -157,6 +157,19 @@ app.use(
 );
 app.use('/api/v1/pins', auth, authenticatedLimiter(), buildPinsRouter());
 
+// Root route — service descriptor. Works for both Railway-generated domains
+// (e.g. *.up.railway.app) and any custom domain since it is host-agnostic.
+app.get('/', (_req, res) => {
+  res.json({
+    service: config.serviceName,
+    status: 'ok',
+    env: config.env,
+    api: '/api/v1',
+    health: '/healthz',
+    readiness: '/readyz',
+  });
+});
+
 // Fallthrough.
 app.use((req, _res, next) =>
   next(errors.notFound('route_not_found', `No route ${req.method} ${req.path}`)),
