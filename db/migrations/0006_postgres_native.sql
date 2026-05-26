@@ -23,19 +23,18 @@ COMMENT ON DATABASE current_database IS 'Advisory lock IDs: 8675309,1=scheduler;
 
 -- ----- rate_limits table (replaces Redis rate limiting) -----
 CREATE TABLE IF NOT EXISTS rate_limits (
-  key         TEXT NOT NULL,
+  key         VARCHAR(255) PRIMARY KEY,
   points      INT NOT NULL DEFAULT 0,
-  expire_at   TIMESTAMPTZ NOT NULL,
-  PRIMARY KEY (key)
+  expire      BIGINT
 );
-CREATE INDEX IF NOT EXISTS rate_limits_expire_idx ON rate_limits(expire_at);
+CREATE INDEX IF NOT EXISTS rate_limits_expire_idx ON rate_limits(expire);
 
 -- Cleanup function for expired rate limit entries (run by scheduler)
 CREATE OR REPLACE FUNCTION cleanup_rate_limits() RETURNS INTEGER AS $$
 DECLARE
   deleted_count INTEGER;
 BEGIN
-  DELETE FROM rate_limits WHERE expire_at < now();
+  DELETE FROM rate_limits WHERE expire < (EXTRACT(EPOCH FROM now()) * 1000)::BIGINT;
   GET DIAGNOSTICS deleted_count = ROW_COUNT;
   RETURN deleted_count;
 END;

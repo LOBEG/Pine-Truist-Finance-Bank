@@ -61,7 +61,8 @@ async function globalLimiter(req, res, next) {
     next();
   } catch (err) {
     if (err instanceof Error) {
-      next(err);
+      logger.warn({ err: err.message }, 'gateway rate limiter unavailable; failing open');
+      next();
       return;
     }
 

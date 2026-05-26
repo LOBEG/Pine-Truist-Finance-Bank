@@ -29,11 +29,8 @@ import { buildPinsRouter } from './routes/pins.js';
 import { buildMeRouter } from './routes/me.js';
 import {
   globalIpLimiter,
-  loginLimiter,
   transferLimiter,
   pinAttemptLimiter,
-  registerLimiter,
-  mfaLimiter,
   authenticatedLimiter,
 } from './middleware/ratelimit.js';
 
@@ -126,9 +123,6 @@ app.use('/api', globalIpLimiter());
 
 // Auth router with specific rate limiters per endpoint type.
 const authRouter = buildAuthRouter({ signAccess, sessions, config, logger, publish, verifyJwt });
-app.use('/api/v1/auth/register', registerLimiter());
-app.use('/api/v1/auth/login', loginLimiter());
-app.use('/api/v1/auth/mfa', mfaLimiter());
 app.use('/api/v1/auth', authRouter);
 
 // Authenticated zone with per-user rate limiting.

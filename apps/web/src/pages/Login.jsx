@@ -42,7 +42,7 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1b2e4a] flex flex-col">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(58,143,92,0.35),_transparent_32%),linear-gradient(135deg,_#07111f_0%,_#10243c_52%,_#123524_100%)] flex flex-col">
       {/* Header */}
       <header className="px-6 py-5">
         <Link to="/">
@@ -51,12 +51,31 @@ export function Login() {
       </header>
 
       {/* Main */}
-      <div className="flex-1 flex items-center justify-center px-4 pb-12">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+      <div className="flex-1 grid lg:grid-cols-2 items-center gap-10 px-4 pb-12 mx-auto max-w-6xl w-full">
+        <div className="hidden lg:block text-white">
+          <p className="inline-flex rounded-full border border-gold-400/40 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-gold-400 mb-5">
+            Secure online access
+          </p>
+          <h2 className="text-4xl font-extrabold leading-tight mb-4">
+            Sign in to a banking experience designed for confidence.
+          </h2>
+          <p className="text-slate-200 max-w-lg">
+            Account activity, transfers, deposits, and alerts are protected by layered controls and
+            real-time monitoring.
+          </p>
+          <div className="mt-8 grid grid-cols-3 gap-3 max-w-lg text-center">
+            {['Encrypted', 'Audited', 'Monitored'].map((item) => (
+              <div key={item} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
+                <span className="text-sm font-bold">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mx-auto ring-1 ring-white/40">
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-pine-900">Welcome Back</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Sign in to your Pine Truist Finance Bank account
+              Sign in with your username or admin email
             </p>
           </div>
 

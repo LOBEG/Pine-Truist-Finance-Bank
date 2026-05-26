@@ -67,17 +67,38 @@ function GreenCheckIcon({ className = 'w-6 h-6' }) {
   );
 }
 
+const serviceCards = [
+  {
+    title: 'Digital Checking',
+    desc: 'Open and manage secure everyday banking with instant balances, transfers, deposits, and alerts.',
+  },
+  {
+    title: 'Savings Growth',
+    desc: 'Build reserves with goal-based savings tools and clear visibility into your progress.',
+  },
+  {
+    title: 'Business Banking',
+    desc: 'Bank-ready accounts for payments, wires, vendor transfers, and operational cash flow.',
+  },
+];
+
+const helpCards = [
+  'Account specialists are available 24/7 for login, transfer, and security support.',
+  'Real-time fraud monitoring helps protect every session and transaction.',
+  'Encrypted onboarding keeps personal information protected from application to approval.',
+];
+
 /* ─── Landing page ──────────────────────────────────────────────────── */
 
 export function Landing() {
   return (
-    <div className="min-h-screen bg-white text-pine-900 font-sans">
+    <div className="min-h-screen bg-slate-950 text-pine-900 font-sans">
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <header className="bg-[#1b2e4a] text-white">
+      <header className="bg-slate-950/95 text-white border-b border-white/10 sticky top-0 z-10 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
           <BrandLogo variant="dark" />
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <a href="#" className="hover:text-pine-200">
+            <a href="#home" className="hover:text-pine-200">
               Home
             </a>
             <a href="#about" className="hover:text-pine-200">
@@ -97,26 +118,44 @@ export function Landing() {
       </header>
 
       {/* ── Hero Section ───────────────────────────────────────────── */}
-      <section className="bg-[#1b2e4a] relative overflow-hidden">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 flex flex-col md:flex-row items-center gap-10">
+      <section
+        id="home"
+        className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(58,143,92,0.35),_transparent_34%),linear-gradient(135deg,_#07111f_0%,_#10243c_48%,_#123524_100%)]"
+      >
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white to-transparent" />
+        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 flex flex-col md:flex-row items-center gap-10 relative">
           <div className="flex-1 text-center md:text-left">
+            <p className="inline-flex rounded-full border border-gold-400/40 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-gold-400 mb-5">
+              Trusted digital banking
+            </p>
             <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight mb-4">
-              Smart Banking
+              Secure Banking
               <br />
               <span className="font-normal">for Your Modern Life</span>
             </h1>
-            <p className="text-gray-300 text-lg mb-8">Manage your money with ease and security.</p>
-            <Link
-              to="/register"
-              className="inline-block bg-[#3a8f5c] hover:bg-[#2f7a4d] text-white font-bold px-8 py-3 rounded-lg shadow-lg text-base"
-            >
-              Get Started
-            </Link>
+            <p className="text-slate-200 text-lg mb-8 max-w-xl">
+              Open accounts, monitor balances, and move money with bank-grade controls built for
+              everyday customers and growing businesses.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+              <Link
+                to="/register"
+                className="inline-block bg-pine-500 hover:bg-pine-400 text-white font-bold px-8 py-3 rounded-lg shadow-lg text-base"
+              >
+                Open an Account
+              </Link>
+              <Link
+                to="/login"
+                className="inline-block bg-white/10 hover:bg-white/20 text-white font-bold px-8 py-3 rounded-lg ring-1 ring-white/25 text-base"
+              >
+                Secure Login
+              </Link>
+            </div>
           </div>
           <div className="flex-1 flex justify-center">
             <svg
               viewBox="0 0 320 280"
-              className="w-full max-w-xs"
+              className="w-full max-w-sm drop-shadow-2xl"
               xmlns="http://www.w3.org/2000/svg"
             >
               <defs>
@@ -154,28 +193,43 @@ export function Landing() {
 
       {/* ── Features Section ───────────────────────────────────────── */}
       <section id="services" className="py-16 px-4 bg-white">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center mb-10">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-pine-600">Services</p>
+            <h2 className="text-3xl font-extrabold text-pine-900 mt-2">Banking that feels secure</h2>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="flex flex-col items-center gap-3">
-              <EasyTransfersIcon className="w-14 h-14" />
-              <h3 className="font-bold text-pine-800 text-lg">Easy Transfers</h3>
-            </div>
-            <div className="flex flex-col items-center gap-3 md:border-x md:border-gray-200 md:px-6">
-              <SecureBankingIcon className="w-14 h-14" />
-              <h3 className="font-bold text-pine-800 text-lg">Secure Banking</h3>
-            </div>
-            <div className="flex flex-col items-center gap-3">
-              <SupportIcon className="w-14 h-14" />
-              <h3 className="font-bold text-pine-800 text-lg">24/7 Support</h3>
-            </div>
+            {serviceCards.map((card, index) => {
+              const Icon =
+                index === 0 ? EasyTransfersIcon : index === 1 ? SecureBankingIcon : SupportIcon;
+              return (
+                <div
+                  key={card.title}
+                  className="flex flex-col items-center gap-3 rounded-2xl border border-pine-100 bg-white p-6 shadow-sm"
+                >
+                  <Icon className="w-14 h-14" />
+                  <h3 className="font-bold text-pine-800 text-lg">{card.title}</h3>
+                  <p className="text-sm text-slate-600">{card.desc}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ── Why Choose Us Section ──────────────────────────────────── */}
-      <section id="about" className="py-16 px-4 bg-gray-50">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-pine-800 mb-8">Why Choose Us?</h2>
+      <section id="about" className="py-16 px-4 bg-slate-50">
+        <div className="mx-auto max-w-5xl grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-pine-600">About</p>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-pine-800 mt-2 mb-4">
+              Pine Truist Finance Bank is built around trust.
+            </h2>
+            <p className="text-slate-600">
+              We combine modern account opening with rigorous identity, audit, and transaction
+              controls so customers can bank confidently from any device.
+            </p>
+          </div>
           <div className="space-y-5 text-left max-w-md mx-auto">
             <div className="flex items-center gap-3">
               <GreenCheckIcon className="w-7 h-7 flex-shrink-0" />
@@ -195,24 +249,56 @@ export function Landing() {
         </div>
       </section>
 
+      <section id="help" className="py-16 px-4 bg-white">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center mb-8">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-pine-600">Help</p>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-pine-900 mt-2">
+              Support for every banking moment
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {helpCards.map((help) => (
+              <div key={help} className="rounded-2xl bg-pine-50 p-5 text-sm text-pine-800">
+                {help}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ─────────────────────────────────────────────────── */}
-      <footer id="help" className="bg-[#1b2e4a] text-gray-300 py-8 px-4">
+      <footer className="bg-slate-950 text-gray-300 py-8 px-4">
         <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-center gap-6 text-sm">
-          <a href="#" className="hover:text-white">
+          <a href="#about" className="hover:text-white">
             About Us
           </a>
           <span className="hidden sm:inline text-gray-500">·</span>
-          <a href="#" className="hover:text-white">
+          <a href="#privacy" className="hover:text-white">
             Privacy Policy
           </a>
           <span className="hidden sm:inline text-gray-500">·</span>
-          <a href="#" className="hover:text-white">
+          <a href="#terms" className="hover:text-white">
             Terms &amp; Conditions
           </a>
           <span className="hidden sm:inline text-gray-500">·</span>
-          <a href="#" className="hover:text-white">
+          <a href="#contact" className="hover:text-white">
             Contact
           </a>
+        </div>
+        <div className="mx-auto max-w-5xl mt-8 grid md:grid-cols-3 gap-4 text-sm">
+          <div id="privacy" className="rounded-xl bg-white/5 p-4">
+            <h3 className="font-bold text-white mb-2">Privacy Policy</h3>
+            <p>Customer data is protected with encryption, strict access controls, and audit logs.</p>
+          </div>
+          <div id="terms" className="rounded-xl bg-white/5 p-4">
+            <h3 className="font-bold text-white mb-2">Terms &amp; Conditions</h3>
+            <p>Accounts are subject to verification, fraud review, and applicable banking rules.</p>
+          </div>
+          <div id="contact" className="rounded-xl bg-white/5 p-4">
+            <h3 className="font-bold text-white mb-2">Contact</h3>
+            <p>Reach Pine Truist support any time for account access, onboarding, or service help.</p>
+          </div>
         </div>
         <p className="text-center text-xs text-gray-500 mt-4">
           © {new Date().getFullYear()} Pine Truist Finance Bank. All rights reserved.

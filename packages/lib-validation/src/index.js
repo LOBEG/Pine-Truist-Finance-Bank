@@ -14,6 +14,7 @@ export const pin6 = z.string().regex(/^\d{6}$/);
 export const username = z.string().regex(/^[a-zA-Z0-9._-]{4,32}$/, {
   message: 'Username must be 4–32 characters: letters, digits, dots, hyphens, underscores only.',
 });
+export const loginIdentifier = z.union([username, email]);
 
 export const phoneE164 = z.string().regex(/^\+[1-9]\d{6,14}$/);
 export const routingNumber = z.string().regex(/^\d{9}$/);
@@ -42,7 +43,7 @@ export const registerBodySchema = z.object({
 });
 
 export const loginBodySchema = z.object({
-  username,
+  username: loginIdentifier,
   password,
   mfaCode: z
     .string()

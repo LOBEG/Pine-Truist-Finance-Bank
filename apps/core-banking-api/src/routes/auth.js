@@ -176,9 +176,9 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
       const ua = req.headers['user-agent'] || '';
 
       const { rows } = await query(
-        `SELECT id, email, password_hash, mfa_enabled, mfa_secret_encrypted,
+        `SELECT id, email, username, password_hash, mfa_enabled, mfa_secret_encrypted,
                 locked_until, failed_login_count, deleted_at
-           FROM users WHERE username = $1`,
+           FROM users WHERE username = $1 OR email = $1`,
         [username],
       );
       const user = rows[0];
@@ -271,7 +271,13 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
         refreshToken,
         expiresIn: config.jwt.accessTtlSeconds,
         tokenType: 'Bearer',
-        user: { id: user.id, email: user.email, username, roles, mfaEnabled: !!user.mfa_enabled },
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username || user.email,
+          roles,
+          mfaEnabled: !!user.mfa_enabled,
+        },
       });
     }),
   );

@@ -221,7 +221,7 @@ export function Register() {
   const ssnDisplay = !ssnFocused && form.ssn.length >= 5 ? `•••-••-${form.ssn.slice(5)}` : form.ssn;
 
   return (
-    <div className="min-h-screen bg-[#1b2e4a] flex flex-col">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_rgba(224,185,74,0.24),_transparent_28%),linear-gradient(135deg,_#07111f_0%,_#10243c_50%,_#123524_100%)] flex flex-col">
       {/* Header */}
       <header className="px-6 py-5">
         <Link to="/">
@@ -230,8 +230,27 @@ export function Register() {
       </header>
 
       {/* Main */}
-      <div className="flex-1 flex items-center justify-center px-4 pb-12">
-        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-8">
+      <div className="flex-1 grid xl:grid-cols-[0.85fr_1.15fr] items-center gap-8 px-4 pb-12 mx-auto max-w-6xl w-full">
+        <div className="hidden xl:block text-white">
+          <p className="inline-flex rounded-full border border-gold-400/40 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-gold-400 mb-5">
+            Open a protected account
+          </p>
+          <h2 className="text-4xl font-extrabold leading-tight mb-4">Start with bank-grade onboarding.</h2>
+          <p className="text-slate-200">
+            We collect the essentials for identity verification, account setup, and fraud protection
+            so your Pine Truist account is ready for secure digital banking.
+          </p>
+          <div className="mt-8 space-y-3">
+            {['Identity verification', 'Encrypted personal data', 'Immediate digital access'].map(
+              (item) => (
+                <div key={item} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
+                  {item}
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+        <div className="w-full max-w-2xl bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mx-auto ring-1 ring-white/40">
           <div className="mb-4">
             <h1 className="text-2xl font-bold text-pine-900">Open a Pine Truist Account</h1>
             <p className="text-sm text-gray-500 mt-1">
