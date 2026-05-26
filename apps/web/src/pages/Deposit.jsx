@@ -33,7 +33,8 @@ export function Deposit() {
       <div>
         <h1 className="text-2xl font-bold text-pine-900">Deposit funds</h1>
         <p className="text-pine-700 text-sm mt-1">
-          Send funds to any of your Pine Truist Finance Bank accounts using the routing and account number below.
+          Send funds to any of your Pine Truist Finance Bank accounts using the routing and account
+          number below.
         </p>
       </div>
 
@@ -128,8 +129,8 @@ export function Deposit() {
                     <li className="flex items-start gap-2">
                       <span className="text-pine-500 mt-0.5">✓</span>
                       <span>
-                        <strong>Internal transfer</strong> — instant between your Pine Truist Finance Bank
-                        accounts. Use the{' '}
+                        <strong>Internal transfer</strong> — instant between your Pine Truist
+                        Finance Bank accounts. Use the{' '}
                         <a className="text-pine-700 underline" href="/transfer">
                           Transfer
                         </a>{' '}

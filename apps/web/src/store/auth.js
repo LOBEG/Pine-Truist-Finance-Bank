@@ -12,14 +12,17 @@ export const useAuth = create((set) => ({
       set({ user: null, loading: false });
     }
   },
-  async login({ email, password, mfaCode }) {
-    const res = await api('/auth/login', { method: 'POST', body: { email, password, mfaCode } });
+  async login({ username, password, mfaCode }) {
+    const res = await api('/auth/login', {
+      method: 'POST',
+      body: { username, password, ...(mfaCode ? { mfaCode } : {}) },
+    });
     setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
     set({ user: res.user, roles: res.user.roles, loading: false });
     return res.user;
   },
-  async register({ email, password, fullName }) {
-    return api('/auth/register', { method: 'POST', body: { email, password, fullName } });
+  async register(payload) {
+    return api('/auth/register', { method: 'POST', body: payload });
   },
   async logout() {
     const rt = getRefreshToken();

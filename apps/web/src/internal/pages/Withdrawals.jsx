@@ -39,7 +39,7 @@ export default function Withdrawals({ user }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason }),
       });
-      
+
       if (response.ok) {
         fetchWithdrawals();
         setSelectedWithdrawal(null);
@@ -97,20 +97,32 @@ export default function Withdrawals({ user }) {
             <p className="mt-4 text-gray-500">Loading withdrawals...</p>
           </div>
         ) : withdrawals.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            No {selectedTab} withdrawals
-          </div>
+          <div className="p-8 text-center text-gray-500">No {selectedTab} withdrawals</div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Request ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Customer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Method
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Requested
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Risk
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -162,14 +174,14 @@ function WithdrawalRow({ withdrawal, onSelect, isPending }) {
       <td className="px-6 py-4 text-sm font-mono font-semibold text-gray-900">
         ${(withdrawal.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
       </td>
-      <td className="px-6 py-4 text-sm text-gray-500">
-        {withdrawal.method || 'Bank Transfer'}
-      </td>
+      <td className="px-6 py-4 text-sm text-gray-500">{withdrawal.method || 'Bank Transfer'}</td>
       <td className="px-6 py-4 text-sm text-gray-500">
         {withdrawal.createdAt ? new Date(withdrawal.createdAt).toLocaleString() : '—'}
       </td>
       <td className="px-6 py-4">
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${riskColors[withdrawal.riskLevel] || riskColors.low}`}>
+        <span
+          className={`px-2 py-1 text-xs font-medium rounded-full ${riskColors[withdrawal.riskLevel] || riskColors.low}`}
+        >
           {withdrawal.riskLevel || 'low'}
         </span>
       </td>
@@ -196,20 +208,32 @@ function WithdrawalModal({ withdrawal, onClose, onApprove, onReject, loading }) 
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900">Withdrawal Request Review</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            ✕
+          </button>
         </div>
 
         <div className="p-6 space-y-6">
           {/* Withdrawal Details */}
           <div className="grid grid-cols-2 gap-4">
             <DetailItem label="Request ID" value={withdrawal.id} />
-            <DetailItem label="Amount" value={`$${(withdrawal.amount || 0).toLocaleString()}`} highlight />
+            <DetailItem
+              label="Amount"
+              value={`$${(withdrawal.amount || 0).toLocaleString()}`}
+              highlight
+            />
             <DetailItem label="Customer" value={withdrawal.customerName} />
             <DetailItem label="Account" value={withdrawal.accountNumber} />
             <DetailItem label="Method" value={withdrawal.method} />
             <DetailItem label="Risk Level" value={withdrawal.riskLevel} />
-            <DetailItem label="Current Balance" value={`$${(withdrawal.currentBalance || 0).toLocaleString()}`} />
-            <DetailItem label="Requested" value={withdrawal.createdAt ? new Date(withdrawal.createdAt).toLocaleString() : '—'} />
+            <DetailItem
+              label="Current Balance"
+              value={`$${(withdrawal.currentBalance || 0).toLocaleString()}`}
+            />
+            <DetailItem
+              label="Requested"
+              value={withdrawal.createdAt ? new Date(withdrawal.createdAt).toLocaleString() : '—'}
+            />
           </div>
 
           {/* Risk Factors */}
@@ -246,7 +270,7 @@ function WithdrawalModal({ withdrawal, onClose, onApprove, onReject, loading }) 
             >
               Cancel
             </button>
-            
+
             {!showRejectForm ? (
               <>
                 <button
@@ -284,7 +308,9 @@ function DetailItem({ label, value, highlight }) {
   return (
     <div>
       <p className="text-xs text-gray-500 uppercase tracking-wider">{label}</p>
-      <p className={`text-sm mt-1 ${highlight ? 'text-lg font-bold text-gray-900' : 'font-medium text-gray-900'}`}>
+      <p
+        className={`text-sm mt-1 ${highlight ? 'text-lg font-bold text-gray-900' : 'font-medium text-gray-900'}`}
+      >
         {value || '—'}
       </p>
     </div>

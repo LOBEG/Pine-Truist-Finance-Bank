@@ -17,7 +17,9 @@ export default defineConfig(({ mode }) => {
     define: {
       'import.meta.env.VITE_API_URL': JSON.stringify(env.PINE_API_URL || '/api/v1'),
       'import.meta.env.VITE_REALTIME_URL': JSON.stringify(env.PINE_REALTIME_URL || ''),
-      'import.meta.env.VITE_INTERNAL_BASE_PATH': JSON.stringify(env.PINE_INTERNAL_BASE_PATH || '/ops'),
+      'import.meta.env.VITE_INTERNAL_BASE_PATH': JSON.stringify(
+        env.PINE_INTERNAL_BASE_PATH || '/ops',
+      ),
     },
   };
 });

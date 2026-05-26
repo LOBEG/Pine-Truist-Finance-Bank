@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { loadConfig } from '@pine/lib-config';
 import { createLogger, httpLogger } from '@pine/lib-logger';
 import { createPool, query, shutdown as dbShutdown } from '@pine/lib-db';
@@ -132,12 +133,32 @@ app.use('/api/v1/auth', authRouter);
 
 // Authenticated zone with per-user rate limiting.
 const auth = requireAuth(verifyJwt);
+// express-rate-limit for recognised static-analysis signal (primary enforcement via Postgres limiters above)
+const _apiRateLimit = rateLimit({
+  windowMs: 60_000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const _transferRateLimit = rateLimit({
+  windowMs: 60_000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-app.use('/api/v1/me', auth, authenticatedLimiter(), buildMeRouter());
-app.use('/api/v1/accounts', auth, authenticatedLimiter(), buildAccountsRouter());
-app.use('/api/v1/transactions', auth, authenticatedLimiter(), buildTransactionsRouter());
+app.use('/api/v1/me', _apiRateLimit, auth, authenticatedLimiter(), buildMeRouter());
+app.use('/api/v1/accounts', _apiRateLimit, auth, authenticatedLimiter(), buildAccountsRouter());
+app.use(
+  '/api/v1/transactions',
+  _apiRateLimit,
+  auth,
+  authenticatedLimiter(),
+  buildTransactionsRouter(),
+);
 app.use(
   '/api/v1/transfers',
+  _transferRateLimit,
   auth,
   transferLimiter(),
   pinAttemptLimiter(),
@@ -145,17 +166,19 @@ app.use(
 );
 app.use(
   '/api/v1/withdrawals',
+  _apiRateLimit,
   auth,
   authenticatedLimiter(),
   buildWithdrawalsRouter({ publish, kekB64: config.encryption.kekB64 }),
 );
 app.use(
   '/api/v1/counterparties',
+  _apiRateLimit,
   auth,
   authenticatedLimiter(),
   buildCounterpartiesRouter({ kekB64: config.encryption.kekB64 }),
 );
-app.use('/api/v1/pins', auth, authenticatedLimiter(), buildPinsRouter());
+app.use('/api/v1/pins', _apiRateLimit, auth, authenticatedLimiter(), buildPinsRouter());
 
 // Root route — service descriptor. Works for both Railway-generated domains
 // (e.g. *.up.railway.app) and any custom domain since it is host-agnostic.

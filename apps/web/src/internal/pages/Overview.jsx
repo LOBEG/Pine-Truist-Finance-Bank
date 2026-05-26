@@ -51,9 +51,7 @@ export default function Overview({ user }) {
           <h1 className="text-2xl font-bold text-gray-900">Operations Overview</h1>
           <p className="text-gray-600">Welcome back, {user?.name || 'Operator'}</p>
         </div>
-        <div className="text-sm text-gray-500">
-          Last updated: {new Date().toLocaleTimeString()}
-        </div>
+        <div className="text-sm text-gray-500">Last updated: {new Date().toLocaleTimeString()}</div>
       </div>
 
       {/* Stats Grid */}
@@ -93,9 +91,7 @@ export default function Overview({ user }) {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Alerts</h2>
         <div className="space-y-3">
           {stats?.alerts?.length > 0 ? (
-            stats.alerts.map((alert, index) => (
-              <AlertItem key={index} alert={alert} />
-            ))
+            stats.alerts.map((alert, index) => <AlertItem key={index} alert={alert} />)
           ) : (
             <p className="text-gray-500 text-sm">No active alerts</p>
           )}
@@ -172,7 +168,9 @@ function AlertItem({ alert }) {
   };
 
   return (
-    <div className={`p-3 rounded-lg border-l-4 ${severityColors[alert.severity] || severityColors.low}`}>
+    <div
+      className={`p-3 rounded-lg border-l-4 ${severityColors[alert.severity] || severityColors.low}`}
+    >
       <div className="flex items-center justify-between">
         <span className="font-medium">{alert.message}</span>
         <span className="text-xs uppercase">{alert.severity}</span>
@@ -190,7 +188,9 @@ function ActivityItem({ activity }) {
       </div>
       <div className="flex-1">
         <p className="text-sm font-medium text-gray-900">{activity.description}</p>
-        <p className="text-xs text-gray-500">{activity.actor} • {activity.timestamp}</p>
+        <p className="text-xs text-gray-500">
+          {activity.actor} • {activity.timestamp}
+        </p>
       </div>
     </div>
   );

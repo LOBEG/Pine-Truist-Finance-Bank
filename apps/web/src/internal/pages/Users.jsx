@@ -22,12 +22,12 @@ export default function Users({ user }) {
       const page = pagination.page;
       const response = await fetch(
         `${apiUrl}/admin/users?page=${page}&limit=${pagination.limit}&search=${encodeURIComponent(query)}`,
-        { credentials: 'include' }
+        { credentials: 'include' },
       );
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
-        setPagination(prev => ({ ...prev, total: data.total || 0 }));
+        setPagination((prev) => ({ ...prev, total: data.total || 0 }));
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
@@ -39,7 +39,7 @@ export default function Users({ user }) {
   function handleSearch(e) {
     e.preventDefault();
     setSearchParams(searchQuery ? { q: searchQuery } : {});
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   }
 
   return (
@@ -81,19 +81,29 @@ export default function Users({ user }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Account
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Balance
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Joined
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.length > 0 ? (
-                users.map((u) => (
-                  <UserRow key={u.id} userData={u} onSelect={setSelectedUser} />
-                ))
+                users.map((u) => <UserRow key={u.id} userData={u} onSelect={setSelectedUser} />)
               ) : (
                 <tr>
                   <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
@@ -109,18 +119,20 @@ export default function Users({ user }) {
         {pagination.total > pagination.limit && (
           <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} users
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{' '}
+              users
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
                 disabled={pagination.page === 1}
                 className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
                 disabled={pagination.page * pagination.limit >= pagination.total}
                 className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
@@ -160,11 +172,11 @@ function UserRow({ userData, onSelect }) {
           </div>
         </div>
       </td>
-      <td className="px-6 py-4 text-sm text-gray-900 font-mono">
-        {userData.accountNumber || '—'}
-      </td>
+      <td className="px-6 py-4 text-sm text-gray-900 font-mono">{userData.accountNumber || '—'}</td>
       <td className="px-6 py-4">
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[userData.status] || statusColors.pending}`}>
+        <span
+          className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[userData.status] || statusColors.pending}`}
+        >
           {userData.status || 'unknown'}
         </span>
       </td>
@@ -192,14 +204,11 @@ function UserDetailModal({ user, onClose }) {
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900">User Details</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             ✕
           </button>
         </div>
-        
+
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <DetailItem label="Name" value={user.name} />
@@ -207,9 +216,15 @@ function UserDetailModal({ user, onClose }) {
             <DetailItem label="Account Number" value={user.accountNumber} />
             <DetailItem label="Status" value={user.status} />
             <DetailItem label="Balance" value={`$${(user.balance || 0).toLocaleString()}`} />
-            <DetailItem label="Joined" value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'} />
+            <DetailItem
+              label="Joined"
+              value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
+            />
             <DetailItem label="MFA Enabled" value={user.mfaEnabled ? 'Yes' : 'No'} />
-            <DetailItem label="Last Login" value={user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'} />
+            <DetailItem
+              label="Last Login"
+              value={user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
+            />
           </div>
 
           <div className="border-t pt-6">
@@ -245,7 +260,9 @@ function ActionButton({ label, variant }) {
   };
 
   return (
-    <button className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${variants[variant]}`}>
+    <button
+      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${variants[variant]}`}
+    >
       {label}
     </button>
   );

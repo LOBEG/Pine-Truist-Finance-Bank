@@ -11,6 +11,9 @@ export const moneyAmount = z
 export const email = z.string().email().max(254);
 export const password = z.string().min(12).max(128);
 export const pin6 = z.string().regex(/^\d{6}$/);
+export const username = z.string().regex(/^[a-zA-Z0-9._-]{4,32}$/, {
+  message: 'Username must be 4–32 characters: letters, digits, dots, hyphens, underscores only.',
+});
 
 export const phoneE164 = z.string().regex(/^\+[1-9]\d{6,14}$/);
 export const routingNumber = z.string().regex(/^\d{9}$/);
@@ -19,14 +22,27 @@ export const accountNumber = z.string().regex(/^\d{4,17}$/);
 // --------------------- Auth ---------------------
 
 export const registerBodySchema = z.object({
-  email,
-  password,
   fullName: z.string().min(2).max(120),
-  phone: phoneE164.optional(),
+  dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'Date must be YYYY-MM-DD.' }),
+  phone: phoneE164,
+  email,
+  addressLine1: z.string().min(1).max(200),
+  addressLine2: z.string().max(200).optional(),
+  city: z.string().min(1).max(100),
+  state: z.string().length(2, { message: 'State must be a 2-letter code.' }),
+  postalCode: z
+    .string()
+    .regex(/^\d{5}(-\d{4})?$/, { message: 'Postal code must be 5 or 9 digits.' }),
+  ssn: z.string().regex(/^\d{9}$/, { message: 'SSN must be exactly 9 digits (no dashes).' }),
+  username,
+  password,
+  securityQuestion: z.string().min(1).max(200),
+  securityAnswer: z.string().min(1).max(200),
+  accountType: z.enum(['checking', 'savings', 'business']),
 });
 
 export const loginBodySchema = z.object({
-  email,
+  username,
   password,
   mfaCode: z
     .string()

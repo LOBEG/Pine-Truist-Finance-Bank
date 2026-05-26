@@ -1,4 +1,4 @@
-const API = import.meta.env.PINE_API_URL || '/api/v1';
+const API = import.meta.env.VITE_API_URL || '/api/v1';
 
 // Tokens are kept in module-level memory only. The previous implementation
 // persisted the refresh token to `localStorage`, which is reachable by any

@@ -38,7 +38,7 @@ export default function FraudQueue({ user }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resolution, notes }),
       });
-      
+
       if (response.ok) {
         fetchAlerts();
         setSelectedAlert(null);
@@ -71,14 +71,14 @@ export default function FraudQueue({ user }) {
       </div>
 
       {/* Priority Banner */}
-      {alerts.filter(a => a.severity === 'critical').length > 0 && (
+      {alerts.filter((a) => a.severity === 'critical').length > 0 && (
         <div className="bg-red-600 text-white p-4 rounded-lg flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🚨</span>
             <div>
               <p className="font-bold">Critical Alerts Require Immediate Attention</p>
               <p className="text-sm opacity-90">
-                {alerts.filter(a => a.severity === 'critical').length} critical alert(s) in queue
+                {alerts.filter((a) => a.severity === 'critical').length} critical alert(s) in queue
               </p>
             </div>
           </div>
@@ -100,11 +100,7 @@ export default function FraudQueue({ user }) {
       ) : (
         <div className="space-y-4">
           {alerts.map((alert) => (
-            <FraudAlertCard
-              key={alert.id}
-              alert={alert}
-              onSelect={setSelectedAlert}
-            />
+            <FraudAlertCard key={alert.id} alert={alert} onSelect={setSelectedAlert} />
           ))}
         </div>
       )}
@@ -138,19 +134,23 @@ function FraudAlertCard({ alert, onSelect }) {
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow border-l-4 ${severityStyles[alert.severity] || severityStyles.medium}`}>
+    <div
+      className={`bg-white rounded-lg shadow border-l-4 ${severityStyles[alert.severity] || severityStyles.medium}`}
+    >
       <div className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <span className={`px-2 py-1 text-xs font-bold uppercase rounded ${severityBadge[alert.severity]}`}>
+              <span
+                className={`px-2 py-1 text-xs font-bold uppercase rounded ${severityBadge[alert.severity]}`}
+              >
                 {alert.severity}
               </span>
               <span className="text-sm text-gray-500 font-mono">{alert.id?.slice(0, 12)}</span>
             </div>
             <h3 className="text-lg font-semibold text-gray-900">{alert.title || alert.type}</h3>
             <p className="text-gray-600 mt-1">{alert.description}</p>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               <div>
                 <p className="text-xs text-gray-500 uppercase">Account</p>
@@ -158,7 +158,9 @@ function FraudAlertCard({ alert, onSelect }) {
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">Amount</p>
-                <p className="text-sm font-medium font-mono">${(alert.amount || 0).toLocaleString()}</p>
+                <p className="text-sm font-medium font-mono">
+                  ${(alert.amount || 0).toLocaleString()}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">Detection Rule</p>
@@ -166,11 +168,13 @@ function FraudAlertCard({ alert, onSelect }) {
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">Detected</p>
-                <p className="text-sm font-medium">{alert.createdAt ? new Date(alert.createdAt).toLocaleString() : '—'}</p>
+                <p className="text-sm font-medium">
+                  {alert.createdAt ? new Date(alert.createdAt).toLocaleString() : '—'}
+                </p>
               </div>
             </div>
           </div>
-          
+
           <button
             onClick={() => onSelect(alert)}
             className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -191,7 +195,11 @@ function InvestigationModal({ alert, onClose, onResolve, loading }) {
     { value: 'confirmed_fraud', label: 'Confirmed Fraud - Block Account', color: 'red' },
     { value: 'suspicious', label: 'Suspicious - Flag for Monitoring', color: 'orange' },
     { value: 'false_positive', label: 'False Positive - No Action', color: 'green' },
-    { value: 'requires_customer_verification', label: 'Requires Customer Verification', color: 'blue' },
+    {
+      value: 'requires_customer_verification',
+      label: 'Requires Customer Verification',
+      color: 'blue',
+    },
   ];
 
   return (
@@ -203,7 +211,9 @@ function InvestigationModal({ alert, onClose, onResolve, loading }) {
               <h2 className="text-xl font-bold">Fraud Investigation</h2>
               <p className="text-slate-400 text-sm mt-1">{alert.id}</p>
             </div>
-            <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+            <button onClick={onClose} className="text-slate-400 hover:text-white">
+              ✕
+            </button>
           </div>
         </div>
 

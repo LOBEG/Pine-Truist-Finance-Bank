@@ -37,7 +37,9 @@ export function Dashboard() {
         <div className="flex items-baseline justify-between">
           <div>
             <h1 className="text-3xl font-extrabold text-pine-900">Good day.</h1>
-            <p className="text-pine-700">Here is a summary of your Pine Truist Finance Bank accounts.</p>
+            <p className="text-pine-700">
+              Here is a summary of your Pine Truist Finance Bank accounts.
+            </p>
           </div>
           <div className="text-right">
             <p className="text-sm text-pine-700">Total assets</p>

@@ -94,15 +94,22 @@ export default function Settings({ user }) {
         <span className="text-2xl">⚠️</span>
         <div>
           <p className="font-medium text-amber-800">Caution: Critical Settings</p>
-          <p className="text-sm text-amber-700">Changes to these settings affect all users and operations. Review carefully before saving.</p>
+          <p className="text-sm text-amber-700">
+            Changes to these settings affect all users and operations. Review carefully before
+            saving.
+          </p>
         </div>
       </div>
 
       {/* Message */}
       {message && (
-        <div className={`p-4 rounded-lg ${
-          message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
-        }`}>
+        <div
+          className={`p-4 rounded-lg ${
+            message.type === 'success'
+              ? 'bg-green-50 text-green-800 border border-green-200'
+              : 'bg-red-50 text-red-800 border border-red-200'
+          }`}
+        >
           {message.text}
         </div>
       )}
@@ -131,22 +138,46 @@ export default function Settings({ user }) {
         {/* Content */}
         <div className="flex-1">
           {activeSection === 'security' && (
-            <SecuritySettings settings={settings?.security} onSave={(data) => saveSettings('security', data)} saving={saving} />
+            <SecuritySettings
+              settings={settings?.security}
+              onSave={(data) => saveSettings('security', data)}
+              saving={saving}
+            />
           )}
           {activeSection === 'limits' && (
-            <LimitsSettings settings={settings?.limits} onSave={(data) => saveSettings('limits', data)} saving={saving} />
+            <LimitsSettings
+              settings={settings?.limits}
+              onSave={(data) => saveSettings('limits', data)}
+              saving={saving}
+            />
           )}
           {activeSection === 'notifications' && (
-            <NotificationsSettings settings={settings?.notifications} onSave={(data) => saveSettings('notifications', data)} saving={saving} />
+            <NotificationsSettings
+              settings={settings?.notifications}
+              onSave={(data) => saveSettings('notifications', data)}
+              saving={saving}
+            />
           )}
           {activeSection === 'compliance' && (
-            <ComplianceSettings settings={settings?.compliance} onSave={(data) => saveSettings('compliance', data)} saving={saving} />
+            <ComplianceSettings
+              settings={settings?.compliance}
+              onSave={(data) => saveSettings('compliance', data)}
+              saving={saving}
+            />
           )}
           {activeSection === 'api' && (
-            <APISettings settings={settings?.api} onSave={(data) => saveSettings('api', data)} saving={saving} />
+            <APISettings
+              settings={settings?.api}
+              onSave={(data) => saveSettings('api', data)}
+              saving={saving}
+            />
           )}
           {activeSection === 'maintenance' && (
-            <MaintenanceSettings settings={settings?.maintenance} onSave={(data) => saveSettings('maintenance', data)} saving={saving} />
+            <MaintenanceSettings
+              settings={settings?.maintenance}
+              onSave={(data) => saveSettings('maintenance', data)}
+              saving={saving}
+            />
           )}
         </div>
       </div>
@@ -173,13 +204,13 @@ function SecuritySettings({ settings, onSave, saving }) {
           label="Require MFA for Internal Users"
           description="All internal users must have MFA enabled"
           checked={formData.mfaRequired}
-          onChange={(v) => setFormData(prev => ({ ...prev, mfaRequired: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, mfaRequired: v }))}
         />
 
         <NumberSetting
           label="Session Timeout (minutes)"
           value={formData.sessionTimeout}
-          onChange={(v) => setFormData(prev => ({ ...prev, sessionTimeout: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, sessionTimeout: v }))}
           min={5}
           max={120}
         />
@@ -187,7 +218,7 @@ function SecuritySettings({ settings, onSave, saving }) {
         <NumberSetting
           label="Max Login Attempts"
           value={formData.maxLoginAttempts}
-          onChange={(v) => setFormData(prev => ({ ...prev, maxLoginAttempts: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, maxLoginAttempts: v }))}
           min={3}
           max={10}
         />
@@ -195,7 +226,7 @@ function SecuritySettings({ settings, onSave, saving }) {
         <NumberSetting
           label="Minimum Password Length"
           value={formData.passwordMinLength}
-          onChange={(v) => setFormData(prev => ({ ...prev, passwordMinLength: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, passwordMinLength: v }))}
           min={8}
           max={32}
         />
@@ -204,7 +235,7 @@ function SecuritySettings({ settings, onSave, saving }) {
           label="IP Allowlist"
           description="Restrict admin access to specific IP addresses"
           checked={formData.ipAllowlistEnabled}
-          onChange={(v) => setFormData(prev => ({ ...prev, ipAllowlistEnabled: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, ipAllowlistEnabled: v }))}
         />
 
         {formData.ipAllowlistEnabled && (
@@ -214,7 +245,7 @@ function SecuritySettings({ settings, onSave, saving }) {
             </label>
             <textarea
               value={formData.allowedIPs}
-              onChange={(e) => setFormData(prev => ({ ...prev, allowedIPs: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, allowedIPs: e.target.value }))}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm"
               rows="5"
               placeholder="192.168.1.0/24&#10;10.0.0.1"
@@ -225,7 +256,12 @@ function SecuritySettings({ settings, onSave, saving }) {
 
       <div className="pt-4 border-t">
         <button
-          onClick={() => onSave({ ...formData, allowedIPs: formData.allowedIPs.split('\n').filter(ip => ip.trim()) })}
+          onClick={() =>
+            onSave({
+              ...formData,
+              allowedIPs: formData.allowedIPs.split('\n').filter((ip) => ip.trim()),
+            })
+          }
           disabled={saving}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
@@ -252,23 +288,23 @@ function LimitsSettings({ settings, onSave, saving }) {
         <CurrencySetting
           label="Daily Withdrawal Limit"
           value={formData.dailyWithdrawalLimit}
-          onChange={(v) => setFormData(prev => ({ ...prev, dailyWithdrawalLimit: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, dailyWithdrawalLimit: v }))}
         />
         <CurrencySetting
           label="Daily Transfer Limit"
           value={formData.dailyTransferLimit}
-          onChange={(v) => setFormData(prev => ({ ...prev, dailyTransferLimit: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, dailyTransferLimit: v }))}
         />
         <CurrencySetting
           label="Single Transaction Limit"
           value={formData.singleTransactionLimit}
-          onChange={(v) => setFormData(prev => ({ ...prev, singleTransactionLimit: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, singleTransactionLimit: v }))}
         />
         <CurrencySetting
           label="Require Approval Above"
           description="Transactions above this amount require manual approval"
           value={formData.requireApprovalAbove}
-          onChange={(v) => setFormData(prev => ({ ...prev, requireApprovalAbove: v }))}
+          onChange={(v) => setFormData((prev) => ({ ...prev, requireApprovalAbove: v }))}
         />
       </div>
 
@@ -319,7 +355,9 @@ function MaintenanceSettings({ settings, onSave, saving }) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Maintenance Mode</h2>
-      <p className="text-gray-500">Enable maintenance mode to temporarily disable customer access.</p>
+      <p className="text-gray-500">
+        Enable maintenance mode to temporarily disable customer access.
+      </p>
       <p className="text-sm text-gray-400 mt-4">Coming soon...</p>
     </div>
   );

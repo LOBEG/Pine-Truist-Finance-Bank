@@ -87,14 +87,18 @@ export default function Compliance({ user }) {
 }
 
 function OverviewTab({ alerts }) {
-  const criticalAlerts = alerts.filter(a => a.severity === 'critical').length;
-  
+  const criticalAlerts = alerts.filter((a) => a.severity === 'critical').length;
+
   return (
     <div className="space-y-6">
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatusCard title="Compliance Score" value="94%" status="good" />
-        <StatusCard title="Pending Reviews" value="12" status={criticalAlerts > 0 ? 'warning' : 'good'} />
+        <StatusCard
+          title="Pending Reviews"
+          value="12"
+          status={criticalAlerts > 0 ? 'warning' : 'good'}
+        />
         <StatusCard title="SAR Filings (YTD)" value="8" status="neutral" />
         <StatusCard title="KYC Pending" value="23" status="warning" />
       </div>
@@ -103,21 +107,9 @@ function OverviewTab({ alerts }) {
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Deadlines</h2>
         <div className="space-y-3">
-          <DeadlineItem
-            title="Quarterly BSA Report"
-            date="2024-03-31"
-            status="on_track"
-          />
-          <DeadlineItem
-            title="Annual AML Risk Assessment"
-            date="2024-04-15"
-            status="at_risk"
-          />
-          <DeadlineItem
-            title="OFAC List Update Review"
-            date="2024-03-20"
-            status="completed"
-          />
+          <DeadlineItem title="Quarterly BSA Report" date="2024-03-31" status="on_track" />
+          <DeadlineItem title="Annual AML Risk Assessment" date="2024-04-15" status="at_risk" />
+          <DeadlineItem title="OFAC List Update Review" date="2024-03-20" status="completed" />
         </div>
       </div>
 
@@ -126,12 +118,20 @@ function OverviewTab({ alerts }) {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Compliance Activity</h2>
         <div className="space-y-3">
           {alerts.slice(0, 5).map((alert, i) => (
-            <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div
+              key={i}
+              className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+            >
               <div className="flex items-center gap-3">
-                <span className={`w-2 h-2 rounded-full ${
-                  alert.severity === 'critical' ? 'bg-red-500' :
-                  alert.severity === 'high' ? 'bg-orange-500' : 'bg-yellow-500'
-                }`}></span>
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    alert.severity === 'critical'
+                      ? 'bg-red-500'
+                      : alert.severity === 'high'
+                        ? 'bg-orange-500'
+                        : 'bg-yellow-500'
+                  }`}
+                ></span>
                 <span className="text-sm">{alert.description}</span>
               </div>
               <span className="text-xs text-gray-500">{alert.timestamp}</span>
@@ -184,31 +184,45 @@ function ReportsTab({ reports }) {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Report</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Generated</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Report
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Type
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Generated
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Status
+            </th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {reports.length > 0 ? reports.map((report) => (
-            <tr key={report.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 text-sm font-medium text-gray-900">{report.name}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">{report.type}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">{report.generatedAt}</td>
-              <td className="px-6 py-4">
-                <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                  {report.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-right">
-                <button className="text-blue-600 hover:text-blue-900 text-sm">Download</button>
-              </td>
-            </tr>
-          )) : (
+          {reports.length > 0 ? (
+            reports.map((report) => (
+              <tr key={report.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{report.name}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{report.type}</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{report.generatedAt}</td>
+                <td className="px-6 py-4">
+                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                    {report.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button className="text-blue-600 hover:text-blue-900 text-sm">Download</button>
+                </td>
+              </tr>
+            ))
+          ) : (
             <tr>
-              <td colSpan="5" className="px-6 py-8 text-center text-gray-500">No reports available</td>
+              <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                No reports available
+              </td>
             </tr>
           )}
         </tbody>
@@ -220,28 +234,35 @@ function ReportsTab({ reports }) {
 function AlertsTab({ alerts }) {
   return (
     <div className="space-y-4">
-      {alerts.length > 0 ? alerts.map((alert) => (
-        <div key={alert.id} className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 text-xs font-bold uppercase rounded ${
-                  alert.severity === 'critical' ? 'bg-red-600 text-white' :
-                  alert.severity === 'high' ? 'bg-orange-500 text-white' : 'bg-yellow-500'
-                }`}>
-                  {alert.severity}
-                </span>
-                <span className="text-sm text-gray-500">{alert.type}</span>
+      {alerts.length > 0 ? (
+        alerts.map((alert) => (
+          <div key={alert.id} className="bg-white rounded-lg shadow p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2 py-1 text-xs font-bold uppercase rounded ${
+                      alert.severity === 'critical'
+                        ? 'bg-red-600 text-white'
+                        : alert.severity === 'high'
+                          ? 'bg-orange-500 text-white'
+                          : 'bg-yellow-500'
+                    }`}
+                  >
+                    {alert.severity}
+                  </span>
+                  <span className="text-sm text-gray-500">{alert.type}</span>
+                </div>
+                <p className="mt-2 text-gray-900">{alert.description}</p>
+                <p className="text-sm text-gray-500 mt-1">{alert.timestamp}</p>
               </div>
-              <p className="mt-2 text-gray-900">{alert.description}</p>
-              <p className="text-sm text-gray-500 mt-1">{alert.timestamp}</p>
+              <button className="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                Review
+              </button>
             </div>
-            <button className="text-blue-600 hover:text-blue-900 text-sm font-medium">
-              Review
-            </button>
           </div>
-        </div>
-      )) : (
+        ))
+      ) : (
         <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
           No compliance alerts
         </div>
@@ -253,11 +274,14 @@ function AlertsTab({ alerts }) {
 function SARFilingTab() {
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Suspicious Activity Report Filing</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        Suspicious Activity Report Filing
+      </h2>
       <p className="text-gray-600 mb-6">
-        File Suspicious Activity Reports (SARs) with FinCEN for transactions or activities that may involve money laundering or other financial crimes.
+        File Suspicious Activity Reports (SARs) with FinCEN for transactions or activities that may
+        involve money laundering or other financial crimes.
       </p>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="border rounded-lg p-4">
           <h3 className="font-medium text-gray-900">Draft SARs</h3>
@@ -270,7 +294,7 @@ function SARFilingTab() {
           <button className="mt-4 text-blue-600 hover:text-blue-900 text-sm">View History →</button>
         </div>
       </div>
-      
+
       <button className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
         + Create New SAR
       </button>
@@ -283,7 +307,7 @@ function KYCAMLTab() {
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">KYC/AML Monitoring</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatusCard title="Pending KYC Reviews" value="23" status="warning" />
           <StatusCard title="Enhanced Due Diligence" value="5" status="critical" />

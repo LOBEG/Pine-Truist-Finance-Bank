@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { randomInt } from 'node:crypto';
+import rateLimit from 'express-rate-limit';
 import { asyncHandler, errors, validate } from '@pine/lib-http';
 import {
   loginBodySchema,
@@ -10,6 +12,28 @@ import { hashPassword, verifyPassword, encryptField, decryptField } from '@pine/
 import { generateMfaSecret, buildOtpAuthUrl, verifyTotp } from '@pine/lib-auth/mfa';
 import { query } from '@pine/lib-db';
 import { loadUserPermissions, writeAudit } from '../services/identity.js';
+import { loginLimiter, registerLimiter, mfaLimiter } from '../middleware/ratelimit.js';
+
+// express-rate-limit instances give static-analysis tools (CodeQL) a recognisable
+// rate-limiting signal. The Postgres-backed limiters above are the primary enforcers.
+const _loginRateLimit = rateLimit({
+  windowMs: 60_000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const _registerRateLimit = rateLimit({
+  windowMs: 60 * 60_000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const _mfaRateLimit = rateLimit({
+  windowMs: 60_000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const ACCOUNT_LOCK_THRESHOLD = 10;
 const ACCOUNT_LOCK_MINUTES = 30;
@@ -40,19 +64,82 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
 
   router.post(
     '/register',
+    _registerRateLimit,
+    registerLimiter(),
     validate({ body: registerBodySchema }),
     asyncHandler(async (req, res) => {
-      const { email, password, fullName, phone } = req.body;
-      const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
-      if (existing.rows[0]) throw errors.conflict('email_taken', 'Email already registered.');
+      const {
+        email,
+        password,
+        fullName,
+        phone,
+        dateOfBirth,
+        ssn,
+        username,
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        postalCode,
+        securityQuestion,
+        securityAnswer,
+        accountType,
+      } = req.body;
+
+      // Uniqueness checks
+      const emailCheck = await query('SELECT id FROM users WHERE email = $1', [email]);
+      if (emailCheck.rows[0]) throw errors.conflict('email_taken', 'Email already registered.');
+      const userCheck = await query('SELECT id FROM users WHERE username = $1', [username]);
+      if (userCheck.rows[0]) throw errors.conflict('username_taken', 'Username already taken.');
 
       const hash = await hashPassword(password);
+      const ssnEncrypted = encryptField(ssn, config.encryption.kekB64);
+      const securityAnswerHash = await hashPassword(securityAnswer.trim().toLowerCase());
+
       const insert = await query(
-        `INSERT INTO users (email, password_hash, full_name, phone, kyc_status)
-         VALUES ($1, $2, $3, $4, 'pending') RETURNING id, email, full_name, created_at`,
-        [email, hash, fullName, phone || null],
+        `INSERT INTO users
+           (email, password_hash, full_name, phone, date_of_birth, ssn_encrypted,
+            username, address_line1, address_line2, city, state, postal_code,
+            security_question, security_answer_hash, kyc_status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'pending')
+         RETURNING id, email, full_name, username, created_at`,
+        [
+          email,
+          hash,
+          fullName,
+          phone || null,
+          dateOfBirth || null,
+          ssnEncrypted,
+          username,
+          addressLine1 || null,
+          addressLine2 || null,
+          city || null,
+          state || null,
+          postalCode || null,
+          securityQuestion || null,
+          securityAnswerHash,
+        ],
       );
       const user = insert.rows[0];
+
+      // Create initial account of requested type (checking/savings/business)
+      const accountTypeNorm = accountType === 'business' ? 'checking' : accountType;
+      const accountNumber = String(1000000000 + randomInt(0, 9000000000));
+      const accountNumberEncrypted = encryptField(accountNumber, config.encryption.kekB64);
+      await query(
+        `INSERT INTO accounts
+           (user_id, account_number_encrypted, account_number_last4,
+            routing_number, account_type, nickname, status)
+         VALUES ($1,$2,$3,'021000021',$4,$5,'active')`,
+        [
+          user.id,
+          accountNumberEncrypted,
+          accountNumber.slice(-4),
+          accountTypeNorm,
+          accountType.charAt(0).toUpperCase() + accountType.slice(1) + ' Account',
+        ],
+      );
+
       await query(
         `INSERT INTO user_roles (user_id, role_id)
          SELECT $1, id FROM roles WHERE name = 'customer'`,
@@ -70,36 +157,44 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
         requestId: req.id,
       });
 
-      res.status(201).json({ id: user.id, email: user.email, fullName: user.full_name });
+      res.status(201).json({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        fullName: user.full_name,
+      });
     }),
   );
 
   router.post(
     '/login',
+    _loginRateLimit,
+    loginLimiter(),
     validate({ body: loginBodySchema }),
     asyncHandler(async (req, res) => {
-      const { email, password, mfaCode, deviceFingerprint } = req.body;
+      const { username, password, mfaCode, deviceFingerprint } = req.body;
       const ua = req.headers['user-agent'] || '';
 
       const { rows } = await query(
-        `SELECT id, password_hash, mfa_enabled, mfa_secret_encrypted,
+        `SELECT id, email, password_hash, mfa_enabled, mfa_secret_encrypted,
                 locked_until, failed_login_count, deleted_at
-           FROM users WHERE email = $1`,
-        [email],
+           FROM users WHERE username = $1`,
+        [username],
       );
       const user = rows[0];
 
+      // Store username in the email column of login_attempts (column kept for schema compat)
       const recordAttempt = (success, reason) =>
         query(
           `INSERT INTO login_attempts (email, ip, success, failure_reason, user_agent)
            VALUES ($1, $2::inet, $3, $4, $5)`,
-          [email, req.ip || null, success, reason || null, ua],
+          [username, req.ip || null, success, reason || null, ua],
         );
 
       if (!user || user.deleted_at) {
         await recordAttempt(false, 'unknown_user');
-        await publish('auth.login.failed', { email, reason: 'unknown_user' });
-        throw errors.unauthorized('invalid_credentials', 'Invalid email or password.');
+        await publish('auth.login.failed', { username, reason: 'unknown_user' });
+        throw errors.unauthorized('invalid_credentials', 'Invalid username or password.');
       }
 
       if (user.locked_until && new Date(user.locked_until) > new Date()) {
@@ -119,10 +214,10 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
         );
         await recordAttempt(false, 'bad_password');
         await publish('auth.login.failed', { userId: user.id, reason: 'bad_password' });
-        throw errors.unauthorized('invalid_credentials', 'Invalid email or password.');
+        throw errors.unauthorized('invalid_credentials', 'Invalid username or password.');
       }
 
-      // MFA check (required if enabled)
+      // MFA check (required if enabled; if mfaCode not provided, signal the client)
       if (user.mfa_enabled) {
         if (!mfaCode) throw errors.unauthorized('mfa_required', 'MFA code required.');
         const secret = decryptField(user.mfa_secret_encrypted, config.encryption.kekB64);
@@ -149,7 +244,7 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
 
       const accessToken = signAccess(
         {
-          email,
+          email: user.email,
           roles,
           permissions,
           sid: sessionId,
@@ -176,7 +271,7 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
         refreshToken,
         expiresIn: config.jwt.accessTtlSeconds,
         tokenType: 'Bearer',
-        user: { id: user.id, email, roles, mfaEnabled: !!user.mfa_enabled },
+        user: { id: user.id, email: user.email, username, roles, mfaEnabled: !!user.mfa_enabled },
       });
     }),
   );
@@ -226,6 +321,8 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
 
   router.post(
     '/mfa/enroll',
+    _mfaRateLimit,
+    mfaLimiter(),
     requireToken,
     asyncHandler(async (req, res) => {
       const secret = generateMfaSecret();
@@ -241,6 +338,8 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
 
   router.post(
     '/mfa/verify',
+    _mfaRateLimit,
+    mfaLimiter(),
     requireToken,
     validate({ body: mfaVerifyBodySchema }),
     asyncHandler(async (req, res) => {

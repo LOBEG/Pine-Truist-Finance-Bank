@@ -32,7 +32,7 @@ export default function Audit({ user }) {
       if (response.ok) {
         const data = await response.json();
         setLogs(data.logs || []);
-        setPagination(prev => ({ ...prev, total: data.total || 0 }));
+        setPagination((prev) => ({ ...prev, total: data.total || 0 }));
       }
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);
@@ -42,8 +42,8 @@ export default function Audit({ user }) {
   }
 
   function handleFilterChange(key, value) {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   }
 
   async function exportLogs() {
@@ -148,20 +148,32 @@ export default function Audit({ user }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resource</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Timestamp
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actor
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Action
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Resource
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  IP Address
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Details
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {logs.length > 0 ? (
-                logs.map((log) => (
-                  <AuditLogRow key={log.id} log={log} />
-                ))
+                logs.map((log) => <AuditLogRow key={log.id} log={log} />)
               ) : (
                 <tr>
                   <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
@@ -177,18 +189,20 @@ export default function Audit({ user }) {
         {pagination.total > pagination.limit && (
           <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{' '}
+              entries
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
                 disabled={pagination.page === 1}
                 className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
                 disabled={pagination.page * pagination.limit >= pagination.total}
                 className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
@@ -201,8 +215,9 @@ export default function Audit({ user }) {
 
       {/* Security Notice */}
       <div className="bg-slate-100 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
-        <strong>📋 Audit Compliance Notice:</strong> All audit logs are immutable and retained for 7 years in accordance with regulatory requirements.
-        Logs are encrypted at rest and in transit. Access to this page is logged.
+        <strong>📋 Audit Compliance Notice:</strong> All audit logs are immutable and retained for 7
+        years in accordance with regulatory requirements. Logs are encrypted at rest and in transit.
+        Access to this page is logged.
       </div>
     </div>
   );
@@ -222,7 +237,7 @@ function AuditLogRow({ log }) {
   };
 
   const getActionColor = (action) => {
-    const key = Object.keys(actionColors).find(k => action?.includes(k));
+    const key = Object.keys(actionColors).find((k) => action?.includes(k));
     return actionColors[key] || 'bg-gray-100 text-gray-800';
   };
 
@@ -243,7 +258,9 @@ function AuditLogRow({ log }) {
           <div className="text-xs text-gray-500">{log.actorRole}</div>
         </td>
         <td className="px-6 py-4">
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}>
+          <span
+            className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}
+          >
             {log.action || 'unknown'}
           </span>
         </td>
@@ -253,9 +270,7 @@ function AuditLogRow({ log }) {
             <span className="text-gray-400 ml-1">#{log.resourceId.slice(0, 8)}</span>
           )}
         </td>
-        <td className="px-6 py-4 text-sm text-gray-500 font-mono">
-          {log.ipAddress || '—'}
-        </td>
+        <td className="px-6 py-4 text-sm text-gray-500 font-mono">{log.ipAddress || '—'}</td>
         <td className="px-6 py-4">
           <span className={`text-sm font-medium ${statusColors[log.status] || 'text-gray-600'}`}>
             {log.status === 'success' ? '✓' : log.status === 'failure' ? '✗' : '⚠'} {log.status}

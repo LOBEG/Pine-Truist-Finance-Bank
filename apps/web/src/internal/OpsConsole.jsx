@@ -13,12 +13,37 @@ const OverviewPage = lazy(() => import('./pages/Overview'));
 
 // Internal navigation items with role requirements
 const NAV_ITEMS = [
-  { path: '', label: 'Overview', icon: '📊', roles: ['admin', 'super_admin', 'compliance_officer', 'auditor', 'support'] },
+  {
+    path: '',
+    label: 'Overview',
+    icon: '📊',
+    roles: ['admin', 'super_admin', 'compliance_officer', 'auditor', 'support'],
+  },
   { path: 'users', label: 'Users', icon: '👥', roles: ['admin', 'super_admin', 'support'] },
-  { path: 'transactions', label: 'Transactions', icon: '💳', roles: ['admin', 'super_admin', 'compliance_officer', 'auditor'] },
-  { path: 'withdrawals', label: 'Withdrawals', icon: '💸', roles: ['admin', 'super_admin', 'compliance_officer'] },
-  { path: 'fraud-queue', label: 'Fraud Queue', icon: '🚨', roles: ['admin', 'super_admin', 'compliance_officer'] },
-  { path: 'compliance', label: 'Compliance', icon: '📋', roles: ['admin', 'super_admin', 'compliance_officer'] },
+  {
+    path: 'transactions',
+    label: 'Transactions',
+    icon: '💳',
+    roles: ['admin', 'super_admin', 'compliance_officer', 'auditor'],
+  },
+  {
+    path: 'withdrawals',
+    label: 'Withdrawals',
+    icon: '💸',
+    roles: ['admin', 'super_admin', 'compliance_officer'],
+  },
+  {
+    path: 'fraud-queue',
+    label: 'Fraud Queue',
+    icon: '🚨',
+    roles: ['admin', 'super_admin', 'compliance_officer'],
+  },
+  {
+    path: 'compliance',
+    label: 'Compliance',
+    icon: '📋',
+    roles: ['admin', 'super_admin', 'compliance_officer'],
+  },
   { path: 'audit', label: 'Audit Log', icon: '📜', roles: ['admin', 'super_admin', 'auditor'] },
   { path: 'settings', label: 'Settings', icon: '⚙️', roles: ['super_admin'] },
 ];
@@ -63,16 +88,18 @@ function InternalHeader({ user, onLogout }) {
           <div className="hidden md:block text-sm text-slate-400">
             {currentTime.toLocaleString()}
           </div>
-          
+
           <div className="flex items-center space-x-3">
             <div className="text-right">
               <p className="text-sm font-medium">{user?.name || 'Operator'}</p>
               <p className="text-xs text-slate-400 uppercase">{user?.role || 'Unknown'}</p>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               {user?.mfaVerified && (
-                <span title="MFA Verified" className="text-green-400">🔐</span>
+                <span title="MFA Verified" className="text-green-400">
+                  🔐
+                </span>
               )}
               <button
                 onClick={onLogout}
@@ -91,26 +118,27 @@ function InternalHeader({ user, onLogout }) {
 // Internal sidebar navigation
 function InternalSidebar({ userRole, basePath }) {
   const location = useLocation();
-  
+
   const hasAccess = (roles) => roles.includes(userRole);
-  
+
   const isActive = (path) => {
     const fullPath = `${basePath}/${path}`.replace(/\/$/, '');
-    return location.pathname === fullPath || 
-           (path === '' && location.pathname === basePath);
+    return location.pathname === fullPath || (path === '' && location.pathname === basePath);
   };
 
   return (
     <aside className="w-64 bg-slate-800 text-white min-h-screen">
       <nav className="p-4">
         <div className="mb-6">
-          <p className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-2">Navigation</p>
+          <p className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-2">
+            Navigation
+          </p>
         </div>
-        
+
         <ul className="space-y-1">
           {NAV_ITEMS.map((item) => {
             if (!hasAccess(item.roles)) return null;
-            
+
             return (
               <li key={item.path}>
                 <Link
@@ -130,7 +158,9 @@ function InternalSidebar({ userRole, basePath }) {
         </ul>
 
         <div className="mt-8 pt-6 border-t border-slate-700">
-          <p className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-3">Quick Actions</p>
+          <p className="text-xs uppercase text-slate-500 font-semibold tracking-wider mb-3">
+            Quick Actions
+          </p>
           <div className="space-y-2">
             <button className="w-full px-3 py-2 bg-amber-700/50 hover:bg-amber-700 rounded text-sm text-left transition-colors">
               🔍 Search Customer
@@ -162,7 +192,7 @@ export default function OpsConsole() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   const basePath = import.meta.env.VITE_INTERNAL_BASE_PATH || '/ops';
   const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
@@ -173,7 +203,7 @@ export default function OpsConsole() {
         const response = await fetch(`${apiUrl}/admin/me`, {
           credentials: 'include',
           headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
           },
         });
 
@@ -214,7 +244,9 @@ export default function OpsConsole() {
         <div className="text-center text-white">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-lg">Verifying session...</p>
-          <p className="text-sm text-slate-400 mt-2">Pine Truist Finance Bank Internal Operations</p>
+          <p className="text-sm text-slate-400 mt-2">
+            Pine Truist Finance Bank Internal Operations
+          </p>
         </div>
       </div>
     );
@@ -223,10 +255,10 @@ export default function OpsConsole() {
   return (
     <div className="min-h-screen bg-slate-100">
       <InternalHeader user={user} onLogout={handleLogout} />
-      
+
       <div className="flex">
         <InternalSidebar userRole={user?.role} basePath={basePath} />
-        
+
         <main className="flex-1 p-6">
           <Suspense fallback={<InternalLoadingSpinner />}>
             <Routes>
@@ -238,15 +270,20 @@ export default function OpsConsole() {
               <Route path="compliance/*" element={<CompliancePage user={user} />} />
               <Route path="audit/*" element={<AuditPage user={user} />} />
               <Route path="settings/*" element={<SettingsPage user={user} />} />
-              <Route path="*" element={
-                <div className="text-center py-12">
-                  <h2 className="text-2xl font-bold text-gray-800">Page Not Found</h2>
-                  <p className="text-gray-600 mt-2">The requested internal page does not exist.</p>
-                  <Link to="." className="text-blue-600 hover:underline mt-4 inline-block">
-                    Return to Overview
-                  </Link>
-                </div>
-              } />
+              <Route
+                path="*"
+                element={
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-bold text-gray-800">Page Not Found</h2>
+                    <p className="text-gray-600 mt-2">
+                      The requested internal page does not exist.
+                    </p>
+                    <Link to="." className="text-blue-600 hover:underline mt-4 inline-block">
+                      Return to Overview
+                    </Link>
+                  </div>
+                }
+              />
             </Routes>
           </Suspense>
         </main>

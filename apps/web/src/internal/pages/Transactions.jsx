@@ -34,7 +34,7 @@ export default function Transactions({ user }) {
       if (response.ok) {
         const data = await response.json();
         setTransactions(data.transactions || []);
-        setPagination(prev => ({ ...prev, total: data.total || 0 }));
+        setPagination((prev) => ({ ...prev, total: data.total || 0 }));
       }
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
@@ -44,8 +44,8 @@ export default function Transactions({ user }) {
   }
 
   function handleFilterChange(key, value) {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   }
 
   return (
@@ -132,21 +132,35 @@ export default function Transactions({ user }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  From
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  To
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {transactions.length > 0 ? (
-                transactions.map((tx) => (
-                  <TransactionRow key={tx.id} transaction={tx} />
-                ))
+                transactions.map((tx) => <TransactionRow key={tx.id} transaction={tx} />)
               ) : (
                 <tr>
                   <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
@@ -162,18 +176,20 @@ export default function Transactions({ user }) {
         {pagination.total > pagination.limit && (
           <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} transactions
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+              {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}{' '}
+              transactions
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
                 disabled={pagination.page === 1}
                 className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
-                onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
                 disabled={pagination.page * pagination.limit >= pagination.total}
                 className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
@@ -209,21 +225,21 @@ function TransactionRow({ transaction }) {
         {transaction.id?.slice(0, 8) || '—'}
       </td>
       <td className="px-6 py-4">
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${typeColors[transaction.type] || 'bg-gray-100 text-gray-800'}`}>
+        <span
+          className={`px-2 py-1 text-xs font-medium rounded-full ${typeColors[transaction.type] || 'bg-gray-100 text-gray-800'}`}
+        >
           {transaction.type || 'unknown'}
         </span>
       </td>
       <td className="px-6 py-4 text-sm font-mono font-semibold text-gray-900">
         ${(transaction.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
       </td>
-      <td className="px-6 py-4 text-sm text-gray-500">
-        {transaction.fromAccount || '—'}
-      </td>
-      <td className="px-6 py-4 text-sm text-gray-500">
-        {transaction.toAccount || '—'}
-      </td>
+      <td className="px-6 py-4 text-sm text-gray-500">{transaction.fromAccount || '—'}</td>
+      <td className="px-6 py-4 text-sm text-gray-500">{transaction.toAccount || '—'}</td>
       <td className="px-6 py-4">
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[transaction.status] || 'bg-gray-100'}`}>
+        <span
+          className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[transaction.status] || 'bg-gray-100'}`}
+        >
           {transaction.status === 'flagged' && '🚩 '}
           {transaction.status || 'unknown'}
         </span>
@@ -233,13 +249,9 @@ function TransactionRow({ transaction }) {
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex justify-end gap-2">
-          <button className="text-blue-600 hover:text-blue-900 text-sm font-medium">
-            Details
-          </button>
+          <button className="text-blue-600 hover:text-blue-900 text-sm font-medium">Details</button>
           {transaction.status === 'flagged' && (
-            <button className="text-red-600 hover:text-red-900 text-sm font-medium">
-              Review
-            </button>
+            <button className="text-red-600 hover:text-red-900 text-sm font-medium">Review</button>
           )}
         </div>
       </td>
