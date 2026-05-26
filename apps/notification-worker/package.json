@@ -13,5 +13,9 @@
     "@pine/lib-db": "*",
     "@pine/lib-queue": "*",
     "@pine/lib-events": "*"
+  },
+  "optionalDependencies": {
+    "@postmarkapp/postmark": "^4.0.5",
+    "twilio": "^5.4.0"
   }
 }

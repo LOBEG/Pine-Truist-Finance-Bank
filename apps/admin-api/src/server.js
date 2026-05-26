@@ -14,7 +14,7 @@ import { createJwtVerifier, requireAuth } from '@pine/lib-auth/jwt';
 import { requireRole, requireMfa } from '@pine/lib-auth/rbac';
 import { csrfProtection } from '@pine/lib-http/csrf';
 import { createPublisher } from '@pine/lib-events';
-import { startOutboxRelay, getRedisConnection } from '@pine/lib-queue';
+import { initQueue, startOutboxRelay } from '@pine/lib-queue';
 
 import { adminGlobalLimiter } from './middleware/ratelimit.js';
 import { ipAllowlist } from './middleware/ipAllowlist.js';
@@ -40,12 +40,17 @@ createPool({
   poolMax: config.database.poolMax,
 });
 
+// Initialize pg-boss job queue (Postgres-native, no Redis)
+await initQueue(config.database.url);
+
 const verifyJwt = createJwtVerifier({
   publicKeyB64: config.jwt.publicKeyB64,
   issuer: config.jwt.issuer,
   audience: config.jwt.audience,
 });
-const publish = createPublisher(config.redis.url);
+
+// Postgres LISTEN/NOTIFY pub/sub (no Redis)
+const publish = createPublisher(config.database.url);
 
 const app = express();
 app.disable('x-powered-by');
@@ -60,9 +65,7 @@ healthRoutes(app, {
   db: async () => {
     await query('SELECT 1');
   },
-  redis: async () => {
-    await getRedisConnection(config.redis.url).ping();
-  },
+  // No Redis health check — all infrastructure is Postgres-native
 });
 
 const auth = requireAuth(verifyJwt);
@@ -78,7 +81,7 @@ const adminCsrf = csrfProtection();
 
 app.use(
   '/api/v1/admin',
-  adminGlobalLimiter(config.redis.url),
+  adminGlobalLimiter(), // No Redis URL — uses Postgres via rate-limiter-flexible
   auth,
   adminOnly,
   mfaRequired,

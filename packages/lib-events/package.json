@@ -1,13 +1,14 @@
 {
   "name": "@pine/lib-events",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js"
   },
+  "description": "Postgres LISTEN/NOTIFY pub/sub (no Redis required)",
   "dependencies": {
-    "ioredis": "^5.4.1"
+    "@pine/lib-db": "*"
   }
 }

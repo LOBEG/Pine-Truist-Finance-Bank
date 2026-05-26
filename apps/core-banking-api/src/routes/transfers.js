@@ -31,6 +31,37 @@ async function assertAccountOwnership(userId, accountId) {
   return rows[0];
 }
 
+/**
+ * Check if external rails are enabled for a given provider.
+ * External ACH/wire transfers are DISABLED by default and require
+ * explicit configuration with a real banking provider.
+ *
+ * PRODUCTION NOTE: This system does NOT simulate real money movement.
+ * External transfers will be rejected unless:
+ * 1. A real provider adapter is configured (Modern Treasury, Dwolla, etc.)
+ * 2. The external_rails_config table has enabled=true for the provider
+ */
+async function assertExternalRailsEnabled(provider) {
+  const { rows } = await query(`SELECT enabled FROM external_rails_config WHERE provider = $1`, [
+    provider,
+  ]);
+
+  if (!rows[0] || !rows[0].enabled) {
+    throw errors.conflict(
+      'external_rails_disabled',
+      `External ${provider.toUpperCase()} transfers are disabled. ` +
+        'No real banking provider is configured. ' +
+        'This system operates in internal-ledger-only mode. ' +
+        'Contact support if you need to enable real external transfers.',
+      {
+        provider,
+        mode: 'internal_ledger_only',
+        documentation: 'docs/PRODUCTION_READINESS.md',
+      },
+    );
+  }
+}
+
 export function buildTransfersRouter({ publish, kekB64 }) {
   const router = Router();
 
@@ -96,11 +127,14 @@ export function buildTransfersRouter({ publish, kekB64 }) {
     }),
   );
 
-  // -------- ACH transfer (debits queue ACH outbound) --------
+  // -------- ACH transfer (DISABLED unless real provider configured) --------
   router.post(
     '/ach',
     validate({ body: achTransferBodySchema }),
     asyncHandler(async (req, res) => {
+      // CRITICAL: Reject ACH transfers unless real provider is configured
+      await assertExternalRailsEnabled('ach');
+
       const idempotencyKey = getIdempotencyKey(req);
       const {
         sourceAccountId,
@@ -176,11 +210,14 @@ export function buildTransfersRouter({ publish, kekB64 }) {
     }),
   );
 
-  // -------- Wire transfer (domestic) --------
+  // -------- Wire transfer (DISABLED unless real provider configured) --------
   router.post(
     '/wire/domestic',
     validate({ body: wireTransferBodySchema }),
     asyncHandler(async (req, res) => {
+      // CRITICAL: Reject wire transfers unless real provider is configured
+      await assertExternalRailsEnabled('wire');
+
       const idempotencyKey = getIdempotencyKey(req);
       const { sourceAccountId, amount, reference, pin, beneficiary } = req.body;
 
@@ -250,6 +287,39 @@ export function buildTransfersRouter({ publish, kekB64 }) {
       });
 
       res.status(202).json({ transactionId: result.transactionId, status: initialStatus });
+    }),
+  );
+
+  // -------- External rails status endpoint --------
+  router.get(
+    '/rails/status',
+    asyncHandler(async (_req, res) => {
+      const { rows } = await query(
+        `SELECT provider, enabled, config, last_verified, updated_at
+         FROM external_rails_config ORDER BY provider`,
+      );
+
+      const status = {
+        mode: 'internal_ledger_only',
+        message:
+          'This system operates in internal-ledger-only mode. ' +
+          'External ACH/wire transfers are disabled unless a real banking provider is configured.',
+        providers: rows.map((r) => ({
+          provider: r.provider,
+          enabled: r.enabled,
+          lastVerified: r.last_verified,
+          note: r.enabled ? 'Real provider configured' : JSON.parse(r.config || '{}').note,
+        })),
+        documentation: 'docs/PRODUCTION_READINESS.md',
+      };
+
+      // If any provider is enabled, update mode
+      if (rows.some((r) => r.enabled)) {
+        status.mode = 'external_rails_partial';
+        status.message = 'Some external rails are enabled. See provider status below.';
+      }
+
+      res.json(status);
     }),
   );
 

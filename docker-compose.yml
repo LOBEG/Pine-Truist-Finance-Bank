@@ -7,6 +7,10 @@
 #
 # All services share the 'pine' network. Services communicate
 # via their service names (e.g. http://core-banking-api:8080).
+#
+# NOTE: This stack is Postgres-native. All job queues, pub/sub,
+# rate limiting, and socket coordination use Postgres instead of
+# Redis. This simplifies infrastructure and operations.
 # ============================================================
 
 version: '3.9'
@@ -48,25 +52,6 @@ services:
       retries: 10
       start_period: 20s
 
-  redis:
-    <<: *service-defaults
-    image: redis:7-alpine
-    command: >
-      redis-server
-      --requirepass ${REDIS_PASSWORD:-redis_dev_secret}
-      --maxmemory 256mb
-      --maxmemory-policy allkeys-lru
-      --save ""
-    volumes:
-      - redis_data:/data
-    ports:
-      - '6379:6379'
-    healthcheck:
-      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-redis_dev_secret}', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   # ---- Migration runner (exits after completion) ---------------
 
   migrator:
@@ -98,7 +83,8 @@ services:
       PORT: 8080
       SERVICE_NAME: api-gateway
       LOG_LEVEL: info
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
+      DATABASE_URL: postgres://pine:${POSTGRES_PASSWORD:-pine_dev_secret}@postgres:5432/pinebank
+      DATABASE_SSL: disable
       CORE_BANKING_URL: http://core-banking-api:8080
       ADMIN_API_URL: http://admin-api:8080
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
@@ -129,7 +115,6 @@ services:
       DATABASE_SSL: disable
       DATABASE_POOL_MIN: 2
       DATABASE_POOL_MAX: 20
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
       JWT_PRIVATE_KEY_B64: ${JWT_PRIVATE_KEY_B64}
       JWT_PUBLIC_KEY_B64: ${JWT_PUBLIC_KEY_B64}
       JWT_ISSUER: pine-bank
@@ -140,15 +125,8 @@ services:
       REFRESH_TOKEN_PEPPER: ${REFRESH_TOKEN_PEPPER}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       RATE_LIMIT_TRUST_PROXY: 'true'
-      POSTMARK_TOKEN: ${POSTMARK_TOKEN:-}
-      EMAIL_FROM: ${EMAIL_FROM:-Pine Bank <no-reply@pinebank.com>}
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_FROM: ${TWILIO_FROM:-}
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
@@ -173,7 +151,6 @@ services:
       LOG_LEVEL: info
       DATABASE_URL: postgres://pine:${POSTGRES_PASSWORD:-pine_dev_secret}@postgres:5432/pinebank
       DATABASE_SSL: disable
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
       JWT_PRIVATE_KEY_B64: ${JWT_PRIVATE_KEY_B64}
       JWT_PUBLIC_KEY_B64: ${JWT_PUBLIC_KEY_B64}
       JWT_ISSUER: pine-bank
@@ -206,14 +183,17 @@ services:
       PORT: 8080
       SERVICE_NAME: realtime-gateway
       LOG_LEVEL: info
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
+      DATABASE_URL: postgres://pine:${POSTGRES_PASSWORD:-pine_dev_secret}@postgres:5432/pinebank
+      DATABASE_SSL: disable
       JWT_PUBLIC_KEY_B64: ${JWT_PUBLIC_KEY_B64}
       JWT_ISSUER: pine-bank
       JWT_AUDIENCE: pine-bank-clients
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
     depends_on:
-      redis:
+      postgres:
         condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://localhost:8080/healthz']
       interval: 20s
@@ -234,12 +214,11 @@ services:
       LOG_LEVEL: info
       DATABASE_URL: postgres://pine:${POSTGRES_PASSWORD:-pine_dev_secret}@postgres:5432/pinebank
       DATABASE_SSL: disable
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
   audit-worker:
     <<: *service-defaults
@@ -252,12 +231,11 @@ services:
       LOG_LEVEL: info
       DATABASE_URL: postgres://pine:${POSTGRES_PASSWORD:-pine_dev_secret}@postgres:5432/pinebank
       DATABASE_SSL: disable
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
   notification-worker:
     <<: *service-defaults
@@ -270,17 +248,16 @@ services:
       LOG_LEVEL: info
       DATABASE_URL: postgres://pine:${POSTGRES_PASSWORD:-pine_dev_secret}@postgres:5432/pinebank
       DATABASE_SSL: disable
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
-      POSTMARK_TOKEN: ${POSTMARK_TOKEN:-}
-      EMAIL_FROM: ${EMAIL_FROM:-Pine Bank <no-reply@pinebank.com>}
+      POSTMARK_API_KEY: ${POSTMARK_API_KEY:-}
+      POSTMARK_FROM_EMAIL: ${POSTMARK_FROM_EMAIL:-no-reply@pinebank.com}
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_FROM: ${TWILIO_FROM:-}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-}
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
   transaction-worker:
     <<: *service-defaults
@@ -293,12 +270,11 @@ services:
       LOG_LEVEL: info
       DATABASE_URL: postgres://pine:${POSTGRES_PASSWORD:-pine_dev_secret}@postgres:5432/pinebank
       DATABASE_SSL: disable
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
   scheduler:
     <<: *service-defaults
@@ -312,15 +288,14 @@ services:
       TZ: America/New_York
       DATABASE_URL: postgres://pine:${POSTGRES_PASSWORD:-pine_dev_secret}@postgres:5432/pinebank
       DATABASE_SSL: disable
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_secret}@redis:6379
     deploy:
       # Scheduler must be a singleton — never scale beyond 1 replica
       replicas: 1
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
   # ---- Frontend ------------------------------------------------
 
@@ -343,8 +318,6 @@ services:
 # ============================================================
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
     driver: local
 
 networks:

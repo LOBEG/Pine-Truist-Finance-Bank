@@ -1,14 +1,13 @@
 import http from 'node:http';
 import express from 'express';
 import { Server as IOServer } from 'socket.io';
-import { createAdapter } from '@socket.io/redis-adapter';
-import IORedis from 'ioredis';
+import { createAdapter } from '@socket.io/postgres-adapter';
 import { loadConfig } from '@pine/lib-config';
 import { createLogger } from '@pine/lib-logger';
 import { createJwtVerifier } from '@pine/lib-auth/jwt';
 import { CHANNELS, createSubscriber } from '@pine/lib-events';
 import { healthRoutes } from '@pine/lib-http';
-import { createPool, query } from '@pine/lib-db';
+import { createPool, getPool, query } from '@pine/lib-db';
 
 const config = loadConfig({ serviceName: 'realtime-gateway' });
 const logger = createLogger({
@@ -17,7 +16,7 @@ const logger = createLogger({
   env: config.env,
 });
 
-// Database connection is required to enforce account-room ownership.
+// Database connection is required to enforce account-room ownership and for socket.io adapter.
 createPool({ url: config.database.url, ssl: config.database.ssl });
 
 const verifyJwt = createJwtVerifier({
@@ -27,7 +26,11 @@ const verifyJwt = createJwtVerifier({
 });
 
 const app = express();
-healthRoutes(app, {});
+healthRoutes(app, {
+  db: async () => {
+    await query('SELECT 1');
+  },
+});
 const httpServer = http.createServer(app);
 
 const _corsOrigins = (config.cors.origins || '')
@@ -41,9 +44,10 @@ const io = new IOServer(httpServer, {
   pingTimeout: 30_000,
 });
 
-const pubClient = new IORedis(config.redis.url);
-const subClient = pubClient.duplicate();
-io.adapter(createAdapter(pubClient, subClient));
+// Use Postgres adapter for Socket.IO (requires socket_io_attachments table).
+// The migration creates this table. The adapter uses LISTEN/NOTIFY for coordination.
+const pool = getPool();
+io.adapter(createAdapter(pool));
 
 // JWT-validated handshake. Token may be in `auth.token` or query.
 io.use((socket, next) => {
@@ -103,8 +107,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Fan-out from Redis pub/sub channels.
-createSubscriber(config.redis.url, {
+// Fan-out from Postgres LISTEN/NOTIFY channels (no Redis).
+createSubscriber(config.database.url, {
   channels: Object.values(CHANNELS),
   logger,
   onMessage: (channel, msg) => {
@@ -133,8 +137,6 @@ async function gracefulShutdown(signal) {
   logger.info({ signal }, 'shutting down');
   io.close();
   httpServer.close(() => {
-    pubClient.disconnect();
-    subClient.disconnect();
     process.exit(0);
   });
   setTimeout(() => process.exit(1), 10_000).unref();

@@ -10,6 +10,7 @@
  *   - daily 04:30: audit archival (>90d to cold storage in prod)
  *   - hourly: ledger reconciliation drift check
  *   - hourly: outbox health check
+ *   - hourly: rate limit entry cleanup
  *
  * Times are expressed in cron format; production deployment should set TZ
  * environment variable to America/New_York for ET-anchored business windows.
@@ -27,7 +28,9 @@ const logger = createLogger({
   env: config.env,
 });
 createPool({ url: config.database.url, ssl: config.database.ssl });
-const publish = createPublisher(config.redis.url);
+
+// Use Postgres LISTEN/NOTIFY for pub/sub (no Redis)
+const publish = createPublisher(config.database.url);
 
 // -------- Jobs --------
 
@@ -94,6 +97,14 @@ async function outboxHealth() {
   }
 }
 
+async function rateLimitCleanup() {
+  // Clean up expired rate limit entries (Postgres-native rate limiting)
+  const r = await query(`SELECT cleanup_rate_limits() AS deleted`);
+  if (r.rows[0].deleted > 0) {
+    logger.info({ deleted: r.rows[0].deleted }, 'rate limit entries cleaned');
+  }
+}
+
 async function monthlyStatements() {
   const accts = await query(`SELECT id FROM accounts WHERE status != 'closed'`);
   const periodEnd = new Date();
@@ -148,6 +159,9 @@ cron.schedule('0 * * * *', () =>
 );
 cron.schedule('5 * * * *', () =>
   outboxHealth().catch((e) => logger.error({ err: e.message }, 'outbox')),
+);
+cron.schedule('10 * * * *', () =>
+  rateLimitCleanup().catch((e) => logger.error({ err: e.message }, 'ratelimit')),
 );
 cron.schedule('0 3 1 * *', () =>
   monthlyStatements().catch((e) => logger.error({ err: e.message }, 'statements')),

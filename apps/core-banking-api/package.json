@@ -10,9 +10,8 @@
   "dependencies": {
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
-    "rate-limit-redis": "^4.2.0",
+    "rate-limiter-flexible": "^5.0.3",
     "cookie-parser": "^1.4.7",
-    "ioredis": "^5.4.1",
     "@pine/lib-config": "*",
     "@pine/lib-logger": "*",
     "@pine/lib-http": "*",

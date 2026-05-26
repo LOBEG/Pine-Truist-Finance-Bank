@@ -11,7 +11,9 @@ const logger = createLogger({
   env: config.env,
 });
 createPool({ url: config.database.url, ssl: config.database.ssl });
-const publish = createPublisher(config.redis.url);
+
+// Use Postgres LISTEN/NOTIFY for pub/sub (no Redis)
+const publish = createPublisher(config.database.url);
 
 const FLAG_THRESHOLD = 50;
 
@@ -75,7 +77,8 @@ async function scoreTransaction(msg) {
   }
 }
 
-createSubscriber(config.redis.url, {
+// Use Postgres LISTEN/NOTIFY for pub/sub (no Redis)
+createSubscriber(config.database.url, {
   channels: [CHANNELS.TRANSACTIONS],
   logger,
   onMessage: (_channel, msg) => {

@@ -1,10 +1,9 @@
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import rateLimit from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
-import IORedis from 'ioredis';
+import { RateLimiterPostgres } from 'rate-limiter-flexible';
 import { loadConfig } from '@pine/lib-config';
 import { createLogger, httpLogger } from '@pine/lib-logger';
+import { createPool, getPool, query } from '@pine/lib-db';
 import {
   securityHeaders,
   corsMiddleware,
@@ -20,7 +19,8 @@ const logger = createLogger({
   env: config.env,
 });
 
-const redisClient = new IORedis(config.redis.url, { enableOfflineQueue: false });
+// Initialize Postgres pool for rate limiting
+createPool({ url: config.database.url, ssl: config.database.ssl });
 
 const app = express();
 app.disable('x-powered-by');
@@ -31,22 +31,58 @@ app.use(corsMiddleware(config.cors.origins));
 app.use(httpLogger(logger));
 
 healthRoutes(app, {
-  redis: async () => {
-    await redisClient.ping();
+  db: async () => {
+    await query('SELECT 1');
   },
 });
 
-const globalLimiter = rateLimit({
-  windowMs: 60_000,
-  max: 600,
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => req.ip,
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.call(...args),
-    prefix: 'pine:rl:gw:',
-  }),
-});
+// Postgres-native rate limiter (no Redis)
+let _limiter = null;
+function getLimiter() {
+  if (_limiter) return _limiter;
+
+  _limiter = new RateLimiterPostgres({
+    storeClient: getPool(),
+    tableName: 'rate_limits',
+    points: 600, // 600 requests
+    duration: 60, // per 60 seconds
+    keyPrefix: 'gateway_global',
+    tableCreated: true, // table created by migration 0006
+  });
+
+  return _limiter;
+}
+
+async function globalLimiter(req, res, next) {
+  const key = req.ip || req.connection?.remoteAddress || 'unknown';
+
+  try {
+    await getLimiter().consume(key, 1);
+    next();
+  } catch (err) {
+    if (err instanceof Error) {
+      next(err);
+      return;
+    }
+
+    const retryAfter = Math.ceil(err.msBeforeNext / 1000);
+    res
+      .set('Retry-After', String(retryAfter))
+      .set('X-RateLimit-Limit', '600')
+      .set('X-RateLimit-Remaining', '0')
+      .set('X-RateLimit-Reset', String(Math.ceil(Date.now() / 1000) + retryAfter))
+      .status(429)
+      .type('application/problem+json')
+      .json({
+        type: 'https://pinebank.com/errors/rate_limited',
+        title: 'Too many requests',
+        status: 429,
+        code: 'rate_limited',
+        retryAfter,
+      });
+  }
+}
+
 app.use(globalLimiter);
 
 const CORE_URL = config.internal.coreBankingUrl;
@@ -93,7 +129,6 @@ const server = app.listen(config.port, () => {
 async function gracefulShutdown(signal) {
   logger.info({ signal }, 'shutting down');
   server.close(() => {
-    redisClient.disconnect();
     process.exit(0);
   });
   setTimeout(() => process.exit(1), 10_000).unref();

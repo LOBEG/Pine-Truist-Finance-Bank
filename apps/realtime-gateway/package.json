@@ -10,12 +10,12 @@
   "dependencies": {
     "express": "^4.21.1",
     "socket.io": "^4.8.0",
-    "@socket.io/redis-adapter": "^8.3.0",
-    "ioredis": "^5.4.1",
+    "@socket.io/postgres-adapter": "^0.5.0",
     "@pine/lib-config": "*",
     "@pine/lib-logger": "*",
     "@pine/lib-auth": "*",
     "@pine/lib-events": "*",
-    "@pine/lib-http": "*"
+    "@pine/lib-http": "*",
+    "@pine/lib-db": "*"
   }
 }

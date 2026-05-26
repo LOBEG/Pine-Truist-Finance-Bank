@@ -1,8 +1,8 @@
 /**
  * Audit worker.
  *
- * 1. Mirrors notable Redis events into audit_logs (for systems that publish
- *    without writing audit synchronously).
+ * 1. Mirrors notable Postgres LISTEN/NOTIFY events into audit_logs (for systems
+ *    that publish without writing audit synchronously).
  * 2. Periodically rolls audit_logs monthly partitions forward and (in
  *    production) archives partitions older than 90 days to S3 cold storage.
  */
@@ -80,7 +80,8 @@ setInterval(
   6 * 60 * 60 * 1000,
 ); // every 6h
 
-createSubscriber(config.redis.url, {
+// Use Postgres LISTEN/NOTIFY for pub/sub (no Redis)
+createSubscriber(config.database.url, {
   channels: Object.values(CHANNELS),
   logger,
   onMessage: (_channel, msg) => {

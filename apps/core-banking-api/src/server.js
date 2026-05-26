@@ -14,7 +14,7 @@ import { csrfProtection } from '@pine/lib-http/csrf';
 import { inputSanitizer } from '@pine/lib-http/sanitize';
 import { createJwtSigner, createJwtVerifier, requireAuth } from '@pine/lib-auth/jwt';
 import { createPublisher } from '@pine/lib-events';
-import { startOutboxRelay, getRedisConnection } from '@pine/lib-queue';
+import { startOutboxRelay, initQueue, shutdownQueue } from '@pine/lib-queue';
 
 import { SessionService } from './services/session.js';
 import { buildAuthRouter } from './routes/auth.js';
@@ -30,6 +30,9 @@ import {
   loginLimiter,
   transferLimiter,
   pinAttemptLimiter,
+  registerLimiter,
+  mfaLimiter,
+  authenticatedLimiter,
 } from './middleware/ratelimit.js';
 
 const config = loadConfig({ serviceName: 'core-banking-api' });
@@ -46,6 +49,10 @@ const pool = createPool({
   poolMax: config.database.poolMax,
 });
 logger.info({ poolMax: config.database.poolMax }, 'db pool initialized');
+
+// Initialize pg-boss queue (Postgres-native, no Redis required)
+await initQueue(config.database.url);
+logger.info('pg-boss queue initialized');
 
 const signAccess = createJwtSigner({
   privateKeyB64: config.jwt.privateKeyB64,
@@ -64,7 +71,8 @@ const sessions = new SessionService({
   refreshTtlSeconds: config.jwt.refreshTtlSeconds,
 });
 
-const publish = createPublisher(config.redis.url);
+// Publisher uses Postgres LISTEN/NOTIFY (no Redis required)
+const publish = createPublisher(config.database.url);
 
 const app = express();
 app.disable('x-powered-by');
@@ -87,43 +95,45 @@ healthRoutes(app, {
   db: async () => {
     await query('SELECT 1');
   },
-  redis: async () => {
-    await getRedisConnection(config.redis.url).ping();
-  },
+  // No Redis health check needed anymore - fully Postgres-native
 });
 
-// Global IP rate limit.
-app.use('/api', globalIpLimiter(config.redis.url));
+// Global IP rate limit (Postgres-backed, no Redis)
+app.use('/api', globalIpLimiter());
 
-// Auth router with login-specific limiter on /login.
+// Auth router with specific rate limiters per endpoint type.
 const authRouter = buildAuthRouter({ signAccess, sessions, config, logger, publish, verifyJwt });
-app.use('/api/v1/auth/login', loginLimiter(config.redis.url));
+app.use('/api/v1/auth/register', registerLimiter());
+app.use('/api/v1/auth/login', loginLimiter());
+app.use('/api/v1/auth/mfa', mfaLimiter());
 app.use('/api/v1/auth', authRouter);
 
-// Authenticated zone.
+// Authenticated zone with per-user rate limiting.
 const auth = requireAuth(verifyJwt);
 
-app.use('/api/v1/me', auth, buildMeRouter());
-app.use('/api/v1/accounts', auth, buildAccountsRouter());
-app.use('/api/v1/transactions', auth, buildTransactionsRouter());
+app.use('/api/v1/me', auth, authenticatedLimiter(), buildMeRouter());
+app.use('/api/v1/accounts', auth, authenticatedLimiter(), buildAccountsRouter());
+app.use('/api/v1/transactions', auth, authenticatedLimiter(), buildTransactionsRouter());
 app.use(
   '/api/v1/transfers',
   auth,
-  transferLimiter(config.redis.url),
-  pinAttemptLimiter(config.redis.url),
+  transferLimiter(),
+  pinAttemptLimiter(),
   buildTransfersRouter({ publish, kekB64: config.encryption.kekB64 }),
 );
 app.use(
   '/api/v1/withdrawals',
   auth,
+  authenticatedLimiter(),
   buildWithdrawalsRouter({ publish, kekB64: config.encryption.kekB64 }),
 );
 app.use(
   '/api/v1/counterparties',
   auth,
+  authenticatedLimiter(),
   buildCounterpartiesRouter({ kekB64: config.encryption.kekB64 }),
 );
-app.use('/api/v1/pins', auth, buildPinsRouter());
+app.use('/api/v1/pins', auth, authenticatedLimiter(), buildPinsRouter());
 
 // Fallthrough.
 app.use((req, _res, next) =>
@@ -132,7 +142,7 @@ app.use((req, _res, next) =>
 app.use(notFoundHandler());
 app.use(errorHandler(logger));
 
-// Start outbox relay (transactional event publisher).
+// Start outbox relay (transactional event publisher, Postgres-native).
 const stopRelay = startOutboxRelay({
   publish: (topic, payload) => publish(topic, payload),
   intervalMs: 500,
@@ -148,6 +158,7 @@ async function gracefulShutdown(signal) {
   logger.info({ signal }, 'shutting down');
   stopRelay();
   server.close(async () => {
+    await shutdownQueue().catch(() => {});
     await dbShutdown().catch(() => {});
     process.exit(0);
   });

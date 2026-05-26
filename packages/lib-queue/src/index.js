@@ -1,15 +1,17 @@
-import { Queue, Worker, QueueEvents } from 'bullmq';
-import IORedis from 'ioredis';
+/**
+ * @pine/lib-queue — Postgres-native job queue
+ *
+ * ARCHITECTURE CHANGE (v2.0):
+ * This module replaces the Redis-based BullMQ implementation with pg-boss,
+ * a Postgres-native job queue. This eliminates the Redis dependency,
+ * simplifies infrastructure, and ensures job state survives restarts.
+ *
+ * For pub/sub events, see lib-events which now uses LISTEN/NOTIFY.
+ */
+import PgBoss from 'pg-boss';
 import { query } from '@pine/lib-db';
 
-let connection;
-
-export function getRedisConnection(url) {
-  if (connection) return connection;
-  if (!url) throw new Error('[lib-queue] REDIS_URL not configured.');
-  connection = new IORedis(url, { maxRetriesPerRequest: null, enableReadyCheck: true });
-  return connection;
-}
+let boss = null;
 
 export const QUEUE_NAMES = Object.freeze({
   NOTIFICATIONS: 'notifications',
@@ -21,43 +23,112 @@ export const QUEUE_NAMES = Object.freeze({
 });
 
 const DEFAULT_JOB_OPTIONS = {
-  attempts: 5,
-  backoff: { type: 'exponential', delay: 5_000 },
-  removeOnComplete: { count: 5_000, age: 60 * 60 * 24 * 7 },
-  removeOnFail: { count: 10_000, age: 60 * 60 * 24 * 30 },
+  retryLimit: 5,
+  retryDelay: 5,
+  retryBackoff: true,
+  expireInSeconds: 60 * 60 * 24 * 7, // 7 days
 };
 
-const queues = new Map();
+/**
+ * Initialize pg-boss with the existing Postgres connection.
+ * Call this once at application startup.
+ */
+export async function initQueue(databaseUrl) {
+  if (boss) return boss;
 
-export function getQueue(name, redisUrl) {
-  if (queues.has(name)) return queues.get(name);
-  const q = new Queue(name, {
-    connection: getRedisConnection(redisUrl),
-    defaultJobOptions: DEFAULT_JOB_OPTIONS,
+  boss = new PgBoss({
+    connectionString: databaseUrl,
+    // Use existing pool if possible for connection efficiency
+    application_name: 'pine-queue',
+    // Maintenance config
+    archiveCompletedAfterSeconds: 60 * 60 * 24 * 7, // Archive after 7 days
+    deleteAfterSeconds: 60 * 60 * 24 * 30, // Delete after 30 days
+    // Monitoring
+    monitorStateIntervalSeconds: 30,
   });
-  queues.set(name, q);
-  return q;
+
+  boss.on('error', (err) => {
+    console.error('[lib-queue] pg-boss error:', err);
+  });
+
+  await boss.start();
+  return boss;
 }
 
-export function createWorker(name, processor, { redisUrl, concurrency = 5 } = {}) {
-  return new Worker(name, processor, {
-    connection: getRedisConnection(redisUrl),
-    concurrency,
-    autorun: true,
+export function getBoss() {
+  if (!boss) throw new Error('[lib-queue] pg-boss not initialized. Call initQueue first.');
+  return boss;
+}
+
+/**
+ * Enqueue a job. Returns job ID.
+ */
+export async function enqueue(queueName, data, options = {}) {
+  const b = getBoss();
+  const jobId = await b.send(queueName, data, {
+    ...DEFAULT_JOB_OPTIONS,
+    ...options,
+  });
+  return jobId;
+}
+
+/**
+ * Create a worker that processes jobs from a queue.
+ * Handler signature: async (job) => result
+ * Job object: { id, name, data }
+ */
+export async function createWorker(queueName, handler, options = {}) {
+  const b = getBoss();
+  const { concurrency = 5 } = options;
+
+  await b.work(queueName, { teamSize: concurrency, teamConcurrency: concurrency }, async (job) => {
+    // pg-boss handles retry logic automatically
+    return await handler(job);
+  });
+
+  return {
+    close: async () => {
+      await b.offWork(queueName);
+    },
+  };
+}
+
+/**
+ * Schedule a recurring job (cron-like).
+ */
+export async function schedule(queueName, cronExpression, data = {}, options = {}) {
+  const b = getBoss();
+  await b.schedule(queueName, cronExpression, data, {
+    ...DEFAULT_JOB_OPTIONS,
+    ...options,
   });
 }
 
-export function createQueueEvents(name, redisUrl) {
-  return new QueueEvents(name, { connection: getRedisConnection(redisUrl) });
+/**
+ * Get queue statistics.
+ */
+export async function getQueueSize(queueName) {
+  const b = getBoss();
+  return b.getQueueSize(queueName);
+}
+
+/**
+ * Gracefully shutdown the queue.
+ */
+export async function shutdownQueue() {
+  if (boss) {
+    await boss.stop({ graceful: true, timeout: 30000 });
+    boss = null;
+  }
 }
 
 // --------------------- Outbox relay ---------------------
-// Periodically reads unsent outbox rows and publishes to BullMQ + Redis pub/sub.
-// Domain events delivered at-least-once. Consumers dedupe on event id.
+// Reads unsent outbox rows and publishes via pg-boss jobs.
+// Consumers dedupe on event id.
 
 export async function pollOutboxOnce({ publish, batchSize = 100 }) {
-  // Atomically claim a batch of undelivered outbox rows by marking them in
-  // a CTE. Using SKIP LOCKED ensures concurrent relays don't double-claim.
+  // Atomically claim a batch of undelivered outbox rows.
+  // Using SKIP LOCKED ensures concurrent relays don't double-claim.
   const { rows } = await query(
     `WITH claimed AS (
        SELECT id FROM outbox
@@ -106,4 +177,47 @@ export function startOutboxRelay({ publish, intervalMs = 1_000, logger }) {
   return () => {
     stopping = true;
   };
+}
+
+// --------------------- Advisory lock helpers ---------------------
+
+export const ADVISORY_LOCK_IDS = Object.freeze({
+  SCHEDULER: [8675309, 1],
+  OUTBOX_RELAY: [8675309, 2],
+  RECONCILIATION: [8675309, 3],
+});
+
+/**
+ * Try to acquire an advisory lock. Returns true if acquired.
+ * Non-blocking — returns immediately.
+ */
+export async function tryAdvisoryLock(lockId1, lockId2) {
+  const { rows } = await query(`SELECT pg_try_advisory_lock($1, $2) AS acquired`, [
+    lockId1,
+    lockId2,
+  ]);
+  return rows[0].acquired;
+}
+
+/**
+ * Release an advisory lock.
+ */
+export async function releaseAdvisoryLock(lockId1, lockId2) {
+  await query(`SELECT pg_advisory_unlock($1, $2)`, [lockId1, lockId2]);
+}
+
+/**
+ * Run a function while holding an advisory lock.
+ * Throws if lock cannot be acquired.
+ */
+export async function withAdvisoryLock(lockId1, lockId2, fn) {
+  const acquired = await tryAdvisoryLock(lockId1, lockId2);
+  if (!acquired) {
+    throw new Error(`Failed to acquire advisory lock [${lockId1}, ${lockId2}]`);
+  }
+  try {
+    return await fn();
+  } finally {
+    await releaseAdvisoryLock(lockId1, lockId2);
+  }
 }

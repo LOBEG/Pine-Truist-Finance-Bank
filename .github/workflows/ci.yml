@@ -24,12 +24,9 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 5s --health-retries 10
-      redis:
-        image: redis:7-alpine
-        ports: ['6379:6379']
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 5s --health-timeout 5s --health-retries 10
+      # NOTE: Redis is no longer required. This application is Postgres-native.
+      # All queues (pg-boss), pub/sub (LISTEN/NOTIFY), rate limiting, and
+      # socket coordination use Postgres.
 
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +55,6 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/pinebank_test
           DATABASE_SSL: disable
-          REDIS_URL: redis://localhost:6379
         run: npm test
 
       - name: Reconcile ledger
