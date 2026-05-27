@@ -233,17 +233,18 @@ export function Register() {
       <div className="flex-1 grid xl:grid-cols-[0.85fr_1.15fr] items-center gap-8 px-4 pb-12 mx-auto max-w-6xl w-full">
         <div className="hidden xl:block text-white">
           <p className="inline-flex rounded-full border border-gold-400/40 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-gold-400 mb-5">
-            Open a protected account
+            Account Application
           </p>
           <h2 className="text-4xl font-extrabold leading-tight mb-4">
-            Start with bank-grade onboarding.
+            Open your account in minutes
           </h2>
-          <p className="text-slate-200">
-            We collect the essentials for identity verification, account setup, and fraud protection
-            so your Pine Truist account is ready for secure digital banking.
+          <p className="text-slate-200 leading-relaxed">
+            Our secure application process collects the information required for identity verification 
+            and regulatory compliance. Your personal data is encrypted end-to-end and protected by 
+            bank-grade security throughout the application process.
           </p>
           <div className="mt-8 space-y-3">
-            {['Identity verification', 'Encrypted personal data', 'Immediate digital access'].map(
+            {['Identity Verification', 'Encrypted Data Storage', 'Instant Account Activation'].map(
               (item) => (
                 <div key={item} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
                   {item}
@@ -254,9 +255,9 @@ export function Register() {
         </div>
         <div className="w-full max-w-2xl bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mx-auto ring-1 ring-white/40">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-pine-900">Open a Pine Truist Account</h1>
+            <h1 className="text-2xl font-bold text-pine-900">Account Application</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Step {step} of 4 — {STEP_LABELS[step - 1]}
+              Step {step} of 4 — {STEP_LABELS[step - 1]} Information
             </p>
           </div>
 
@@ -266,6 +267,9 @@ export function Register() {
           {step === 1 && (
             <div className="space-y-4">
               <h2 className="font-semibold text-pine-900">Personal information</h2>
+              <p className="text-sm text-gray-600">
+                Please provide your legal information as it appears on government-issued identification.
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className="label" htmlFor="r-name">
@@ -397,7 +401,7 @@ export function Register() {
                     onChange={(e) => upd('ssn', e.target.value.replace(/\D/g, '').slice(0, 9))}
                   />
                   <p className="text-xs text-pine-600 mt-1">
-                    9 digits, no dashes. Masked after entry.
+                    Required for identity verification. Masked for security.
                   </p>
                   <FieldError msg={errors.ssn} />
                 </div>
@@ -412,7 +416,7 @@ export function Register() {
                     value={form.username}
                     onChange={(e) => upd('username', e.target.value)}
                   />
-                  <p className="text-xs text-pine-600 mt-1">4–32 chars: letters, digits, . - _</p>
+                  <p className="text-xs text-pine-600 mt-1">Your online banking username (cannot be changed)</p>
                   <FieldError msg={errors.username} />
                 </div>
                 <div className="sm:col-span-2">
@@ -437,7 +441,10 @@ export function Register() {
           {/* ── STEP 2: Security ─────────────────────────── */}
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="font-semibold text-pine-900">Security setup</h2>
+              <h2 className="font-semibold text-pine-900">Account security</h2>
+              <p className="text-sm text-gray-600">
+                Set up your password and security question to protect your account.
+              </p>
               <div>
                 <label className="label" htmlFor="r-confirm">
                   Confirm password
@@ -481,7 +488,7 @@ export function Register() {
                   onChange={(e) => upd('securityAnswer', e.target.value)}
                 />
                 <p className="text-xs text-pine-600 mt-1">
-                  Stored securely (hashed). Case-insensitive.
+                  Used for account recovery. Case-insensitive.
                 </p>
                 <FieldError msg={errors.securityAnswer} />
               </div>
@@ -497,11 +504,11 @@ export function Register() {
                     <rect x="3" y="11" width="18" height="11" rx="2" />
                     <path d="M7 11V7a5 5 0 0110 0v4" />
                   </svg>
-                  Two-factor authentication
+                  Multi-Factor Authentication
                 </p>
                 <p className="text-pine-700 mt-1">
-                  After opening your account, you can enroll an authenticator app for added security
-                  under Settings → Security.
+                  For added security, you can enable two-factor authentication after account creation 
+                  through your account settings.
                 </p>
               </div>
             </div>
@@ -510,27 +517,30 @@ export function Register() {
           {/* ── STEP 3: Account Type ─────────────────────── */}
           {step === 3 && (
             <div className="space-y-4">
-              <h2 className="font-semibold text-pine-900">Choose your account type</h2>
+              <h2 className="font-semibold text-pine-900">Select account type</h2>
+              <p className="text-sm text-gray-600">
+                Choose the account that best fits your financial needs.
+              </p>
               <FieldError msg={errors.accountType} />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   {
                     type: 'checking',
-                    title: 'Free Checking',
-                    desc: 'No monthly fee. Free debit card, ATM access, Zelle® P2P, and mobile deposit.',
+                    title: 'Personal Checking',
+                    desc: 'Everyday banking with no monthly fees, free transfers, and instant access to your funds.',
                     iconPath:
                       'M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z',
                   },
                   {
                     type: 'savings',
-                    title: 'High-Yield Savings',
-                    desc: 'Competitive APY. Grow your money with no minimum balance.',
+                    title: 'Savings Account',
+                    desc: 'High-yield savings account to help you reach your financial goals with competitive interest rates.',
                     iconPath: 'M3 3v18h18M7 16l4-4 4 4 4-6',
                   },
                   {
                     type: 'business',
-                    title: 'Business Checking',
-                    desc: 'ACH, wire, invoicing, and multi-user access.',
+                    title: 'Business Account',
+                    desc: 'Full-featured business banking with ACH, wire transfers, and multi-user access controls.',
                     iconPath:
                       'M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 10v11M12 10v11M16 10v11',
                   },
@@ -567,7 +577,10 @@ export function Register() {
           {/* ── STEP 4: Review ───────────────────────────── */}
           {step === 4 && (
             <div className="space-y-4">
-              <h2 className="font-semibold text-pine-900">Review your application</h2>
+              <h2 className="font-semibold text-pine-900">Review and submit</h2>
+              <p className="text-sm text-gray-600">
+                Please review your information before submitting your application.
+              </p>
               <dl className="bg-pine-50 rounded-xl ring-1 ring-pine-100 p-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
                 {[
                   ['Full name', form.fullName],
@@ -599,21 +612,21 @@ export function Register() {
               </dl>
 
               <div className="p-4 bg-amber-50 ring-1 ring-amber-200 rounded-xl text-sm text-amber-900">
-                <p className="font-semibold mb-1">Legal disclosures</p>
+                <p className="font-semibold mb-1">Important Disclosures</p>
                 <p>
-                  By opening this account you agree to Pine Truist Finance Bank&apos;s{' '}
-                  <a href="#" className="underline">
+                  By submitting this application, you agree to Pine Truist Finance Bank&apos;s{' '}
+                  <a href="#" className="underline font-medium">
                     Terms of Service
                   </a>
                   ,{' '}
-                  <a href="#" className="underline">
+                  <a href="#" className="underline font-medium">
                     Privacy Policy
                   </a>
                   , and{' '}
-                  <a href="#" className="underline">
-                    E-Sign Consent
+                  <a href="#" className="underline font-medium">
+                    Electronic Consent Agreement
                   </a>
-                  . Your deposits are FDIC-insured up to $250,000. Equal Housing Lender.
+                  . Member FDIC. Your deposits are insured up to $250,000 per depositor.
                 </p>
               </div>
 
@@ -625,7 +638,7 @@ export function Register() {
                   onChange={(e) => upd('agreedToTerms', e.target.checked)}
                 />
                 <span className="text-sm text-pine-800">
-                  I agree to the Terms, Privacy Policy, and E-Sign Consent.
+                  I have read and agree to the Terms of Service, Privacy Policy, and Electronic Consent Agreement.
                 </span>
               </label>
               <FieldError msg={errors.agreedToTerms} />

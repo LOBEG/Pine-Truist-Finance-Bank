@@ -54,17 +54,18 @@ export function Login() {
       <div className="flex-1 grid lg:grid-cols-2 items-center gap-10 px-4 pb-12 mx-auto max-w-6xl w-full">
         <div className="hidden lg:block text-white">
           <p className="inline-flex rounded-full border border-gold-400/40 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-gold-400 mb-5">
-            Secure online access
+            Secure Login
           </p>
           <h2 className="text-4xl font-extrabold leading-tight mb-4">
-            Sign in to a banking experience designed for confidence.
+            Access your account with confidence
           </h2>
-          <p className="text-slate-200 max-w-lg">
-            Account activity, transfers, deposits, and alerts are protected by layered controls and
-            real-time monitoring.
+          <p className="text-slate-200 max-w-lg leading-relaxed">
+            Your Pine Truist account is protected by industry-leading security measures including 
+            encrypted connections, multi-factor authentication, and continuous fraud monitoring. 
+            Every login is verified to ensure your financial information stays safe.
           </p>
           <div className="mt-8 grid grid-cols-3 gap-3 max-w-lg text-center">
-            {['Encrypted', 'Audited', 'Monitored'].map((item) => (
+            {['256-bit Encryption', 'Fraud Detection', 'Session Security'].map((item) => (
               <div key={item} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
                 <span className="text-sm font-bold">{item}</span>
               </div>
@@ -73,13 +74,13 @@ export function Login() {
         </div>
         <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mx-auto ring-1 ring-white/40">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-pine-900">Welcome Back</h1>
-            <p className="text-sm text-gray-500 mt-1">Sign in with your username or admin email</p>
+            <h1 className="text-2xl font-bold text-pine-900">Sign In</h1>
+            <p className="text-sm text-gray-500 mt-1">Access your Pine Truist account securely</p>
           </div>
 
           {registered && (
             <div className="mb-4 text-sm text-pine-800 bg-pine-50 ring-1 ring-pine-200 rounded-lg p-3">
-              Account created successfully! Sign in to get started.
+              ✓ Account created successfully! Please sign in to continue.
             </div>
           )}
 
@@ -98,7 +99,7 @@ export function Login() {
                 required
                 autoFocus
                 autoComplete="username"
-                placeholder="Enter your username"
+                placeholder="Enter username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -118,7 +119,7 @@ export function Login() {
                 type="password"
                 required
                 autoComplete="current-password"
-                placeholder="Enter your password"
+                placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
