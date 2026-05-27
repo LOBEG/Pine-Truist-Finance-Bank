@@ -239,9 +239,9 @@ export function Register() {
             Open your account in minutes
           </h2>
           <p className="text-slate-200 leading-relaxed">
-            Our secure application process collects the information required for identity verification 
-            and regulatory compliance. Your personal data is encrypted end-to-end and protected by 
-            bank-grade security throughout the application process.
+            Our secure application process collects the information required for identity
+            verification and regulatory compliance. Your personal data is encrypted end-to-end and
+            protected by bank-grade security throughout the application process.
           </p>
           <div className="mt-8 space-y-3">
             {['Identity Verification', 'Encrypted Data Storage', 'Instant Account Activation'].map(
@@ -268,7 +268,8 @@ export function Register() {
             <div className="space-y-4">
               <h2 className="font-semibold text-pine-900">Personal information</h2>
               <p className="text-sm text-gray-600">
-                Please provide your legal information as it appears on government-issued identification.
+                Please provide your legal information as it appears on government-issued
+                identification.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
@@ -416,7 +417,9 @@ export function Register() {
                     value={form.username}
                     onChange={(e) => upd('username', e.target.value)}
                   />
-                  <p className="text-xs text-pine-600 mt-1">Your online banking username (cannot be changed)</p>
+                  <p className="text-xs text-pine-600 mt-1">
+                    Your online banking username (cannot be changed)
+                  </p>
                   <FieldError msg={errors.username} />
                 </div>
                 <div className="sm:col-span-2">
@@ -507,8 +510,8 @@ export function Register() {
                   Multi-Factor Authentication
                 </p>
                 <p className="text-pine-700 mt-1">
-                  For added security, you can enable two-factor authentication after account creation 
-                  through your account settings.
+                  For added security, you can enable two-factor authentication after account
+                  creation through your account settings.
                 </p>
               </div>
             </div>
@@ -638,7 +641,8 @@ export function Register() {
                   onChange={(e) => upd('agreedToTerms', e.target.checked)}
                 />
                 <span className="text-sm text-pine-800">
-                  I have read and agree to the Terms of Service, Privacy Policy, and Electronic Consent Agreement.
+                  I have read and agree to the Terms of Service, Privacy Policy, and Electronic
+                  Consent Agreement.
                 </span>
               </label>
               <FieldError msg={errors.agreedToTerms} />

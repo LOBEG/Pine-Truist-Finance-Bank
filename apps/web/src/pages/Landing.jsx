@@ -134,7 +134,8 @@ export function Landing() {
               <span className="font-normal">for Your Modern Life</span>
             </h1>
             <p className="text-slate-200 text-lg mb-8 max-w-xl">
-              Experience banking built on trust, security, and transparency. Manage your finances with confidence through our secure digital platform—accessible anytime, anywhere.
+              Experience banking built on trust, security, and transparency. Manage your finances
+              with confidence through our secure digital platform—accessible anytime, anywhere.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
               <Link
@@ -169,39 +170,61 @@ export function Landing() {
                     <stop offset="100%" stopColor="#2f7a4d" />
                   </linearGradient>
                 </defs>
-                
+
                 {/* Main card device */}
                 <rect x="40" y="30" width="240" height="260" rx="24" fill="url(#heroGrad)" />
-                <rect x="40" y="30" width="240" height="260" rx="24" fill="rgba(255,255,255,0.02)" />
-                
+                <rect
+                  x="40"
+                  y="30"
+                  width="240"
+                  height="260"
+                  rx="24"
+                  fill="rgba(255,255,255,0.02)"
+                />
+
                 {/* Account balance area - no specific numbers */}
-                <rect x="60" y="65" width="200" height="45" rx="8" fill="url(#cardGrad)" opacity="0.9" />
+                <rect
+                  x="60"
+                  y="65"
+                  width="200"
+                  height="45"
+                  rx="8"
+                  fill="url(#cardGrad)"
+                  opacity="0.9"
+                />
                 <rect x="75" y="80" width="90" height="8" rx="4" fill="rgba(255,255,255,0.3)" />
                 <rect x="75" y="92" width="50" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
-                
+
                 {/* Action buttons */}
                 <rect x="60" y="125" width="90" height="32" rx="6" fill="rgba(255,255,255,0.12)" />
                 <rect x="75" y="136" width="60" height="10" rx="2" fill="rgba(255,255,255,0.25)" />
-                
+
                 <rect x="165" y="125" width="95" height="32" rx="6" fill="rgba(255,255,255,0.12)" />
                 <rect x="180" y="136" width="65" height="10" rx="2" fill="rgba(255,255,255,0.25)" />
-                
+
                 {/* Transaction list simulation */}
-                <line x1="60" y1="175" x2="260" y2="175" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                
+                <line
+                  x1="60"
+                  y1="175"
+                  x2="260"
+                  y2="175"
+                  stroke="rgba(255,255,255,0.15)"
+                  strokeWidth="1"
+                />
+
                 {/* Recent transactions - abstract representation */}
                 <circle cx="80" cy="200" r="12" fill="#3a8f5c" opacity="0.8" />
                 <rect x="105" y="195" width="100" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
                 <rect x="105" y="205" width="65" height="4" rx="2" fill="rgba(255,255,255,0.12)" />
-                
+
                 <circle cx="80" cy="235" r="12" fill="#e0b94a" opacity="0.8" />
                 <rect x="105" y="230" width="85" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
                 <rect x="105" y="240" width="70" height="4" rx="2" fill="rgba(255,255,255,0.12)" />
-                
+
                 <circle cx="80" cy="270" r="12" fill="#3a8f5c" opacity="0.8" />
                 <rect x="105" y="265" width="95" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
                 <rect x="105" y="275" width="50" height="4" rx="2" fill="rgba(255,255,255,0.12)" />
-                
+
                 {/* Decorative elements */}
                 <circle cx="280" cy="50" r="45" fill="rgba(58,143,92,0.15)" />
                 <circle cx="35" cy="280" r="30" fill="rgba(224,185,74,0.12)" />
@@ -248,18 +271,16 @@ export function Landing() {
               Banking you can trust
             </h2>
             <p className="text-slate-600 leading-relaxed">
-              Pine Truist Finance Bank combines cutting-edge technology with rigorous security standards. 
-              Every account is protected by multi-layered authentication, real-time fraud monitoring, and 
-              encrypted data storage. We&apos;re committed to providing transparent, accessible banking 
-              services that put your financial security first.
+              Pine Truist Finance Bank combines cutting-edge technology with rigorous security
+              standards. Every account is protected by multi-layered authentication, real-time fraud
+              monitoring, and encrypted data storage. We&apos;re committed to providing transparent,
+              accessible banking services that put your financial security first.
             </p>
           </div>
           <div className="space-y-5 text-left max-w-md mx-auto">
             <div className="flex items-center gap-3">
               <GreenCheckIcon className="w-7 h-7 flex-shrink-0" />
-              <span className="text-pine-800 text-lg font-medium">
-                FDIC Insured Accounts
-              </span>
+              <span className="text-pine-800 text-lg font-medium">FDIC Insured Accounts</span>
             </div>
             <div className="flex items-center gap-3">
               <GreenCheckIcon className="w-7 h-7 flex-shrink-0" />

@@ -60,8 +60,8 @@ export function Login() {
             Access your account with confidence
           </h2>
           <p className="text-slate-200 max-w-lg leading-relaxed">
-            Your Pine Truist account is protected by industry-leading security measures including 
-            encrypted connections, multi-factor authentication, and continuous fraud monitoring. 
+            Your Pine Truist account is protected by industry-leading security measures including
+            encrypted connections, multi-factor authentication, and continuous fraud monitoring.
             Every login is verified to ensure your financial information stays safe.
           </p>
           <div className="mt-8 grid grid-cols-3 gap-3 max-w-lg text-center">
