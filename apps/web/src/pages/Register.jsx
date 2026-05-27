@@ -49,8 +49,8 @@ function PasswordStrength({ password }) {
           {!checks.lower && <span>Lowercase</span>}
           {!checks.digit && <span>Digit</span>}
           {!checks.symbol && <span>Symbol</span>}
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }
@@ -240,29 +240,29 @@ export function Register() {
         <aside className="relative hidden xl:block">
           <div className="absolute -left-14 top-10 h-44 w-44 rounded-full bg-pine-400/20 blur-3xl" />
           <div className="glass-panel relative p-8 text-white">
-          <p className="eyebrow mb-5">
-            Account Application
-          </p>
-          <h2 className="mb-4 text-5xl font-black leading-tight tracking-tight">
-            Open your account in minutes
-          </h2>
-          <p className="text-lg leading-8 text-slate-200">
-            Our secure application process collects the information required for identity
-            verification and regulatory compliance. Your personal data is encrypted end-to-end and
-            protected by bank-grade security throughout the application process.
-          </p>
-          <div className="mt-8 space-y-3">
-            {['Identity Verification', 'Encrypted Data Storage', 'Instant Account Activation'].map(
-              (item) => (
+            <p className="eyebrow mb-5">Account Application</p>
+            <h2 className="mb-4 text-5xl font-black leading-tight tracking-tight">
+              Open your account in minutes
+            </h2>
+            <p className="text-lg leading-8 text-slate-200">
+              Our secure application process collects the information required for identity
+              verification and regulatory compliance. Your personal data is encrypted end-to-end and
+              protected by bank-grade security throughout the application process.
+            </p>
+            <div className="mt-8 space-y-3">
+              {[
+                'Identity Verification',
+                'Encrypted Data Storage',
+                'Instant Account Activation',
+              ].map((item) => (
                 <div
                   key={item}
                   className="rounded-3xl border border-white/10 bg-white/10 p-4 font-bold ring-1 ring-white/10"
                 >
                   {item}
                 </div>
-              ),
-            )}
-          </div>
+              ))}
+            </div>
           </div>
         </aside>
         <section className="card mx-auto w-full max-w-2xl p-6 sm:p-8">
@@ -270,7 +270,9 @@ export function Register() {
             <p className="text-sm font-black uppercase tracking-[0.22em] text-pine-600">
               Account application
             </p>
-            <h1 className="mt-2 text-3xl font-black text-pine-950">Open your Pine Truist account</h1>
+            <h1 className="mt-2 text-3xl font-black text-pine-900">
+              Open your Pine Truist account
+            </h1>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Step {step} of 4 — {STEP_LABELS[step - 1]} Information
             </p>
@@ -281,7 +283,7 @@ export function Register() {
           {/* ── STEP 1: Personal Info ─────────────────────── */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-black text-pine-950">Personal information</h2>
+              <h2 className="text-lg font-black text-pine-900">Personal information</h2>
               <p className="text-sm text-gray-600">
                 Please provide your legal information as it appears on government-issued
                 identification.
@@ -459,7 +461,7 @@ export function Register() {
           {/* ── STEP 2: Security ─────────────────────────── */}
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-black text-pine-950">Account security</h2>
+              <h2 className="text-lg font-black text-pine-900">Account security</h2>
               <p className="text-sm text-gray-600">
                 Set up your password and security question to protect your account.
               </p>
@@ -535,7 +537,7 @@ export function Register() {
           {/* ── STEP 3: Account Type ─────────────────────── */}
           {step === 3 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-black text-pine-950">Select account type</h2>
+              <h2 className="text-lg font-black text-pine-900">Select account type</h2>
               <p className="text-sm text-gray-600">
                 Choose the account that best fits your financial needs.
               </p>
@@ -595,7 +597,7 @@ export function Register() {
           {/* ── STEP 4: Review ───────────────────────────── */}
           {step === 4 && (
             <div className="space-y-4">
-              <h2 className="text-lg font-black text-pine-950">Review and submit</h2>
+              <h2 className="text-lg font-black text-pine-900">Review and submit</h2>
               <p className="text-sm text-gray-600">
                 Please review your information before submitting your application.
               </p>

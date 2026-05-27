@@ -49,7 +49,10 @@ export function Login() {
         <Link to="/" aria-label="Pine Truist home">
           <BrandLogo variant="dark" />
         </Link>
-        <Link to="/register" className="hidden rounded-full border border-white/20 px-4 py-2 text-sm font-bold text-white/90 transition hover:bg-white/10 sm:inline-flex">
+        <Link
+          to="/register"
+          className="hidden rounded-full border border-white/20 px-4 py-2 text-sm font-bold text-white/90 transition hover:bg-white/10 sm:inline-flex"
+        >
           Open account
         </Link>
       </header>
@@ -63,11 +66,15 @@ export function Login() {
               Sign in to banking that keeps pace with you.
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-8 text-slate-200">
-              Manage balances, transfers, cards, and alerts from a calm workspace protected by strong authentication and real-time monitoring.
+              Manage balances, transfers, cards, and alerts from a calm workspace protected by
+              strong authentication and real-time monitoring.
             </p>
             <div className="mt-8 grid grid-cols-3 gap-3">
               {trustItems.map((item) => (
-                <div key={item} className="rounded-3xl border border-white/10 bg-white/10 p-4 text-sm font-bold text-white shadow-lg shadow-slate-950/10">
+                <div
+                  key={item}
+                  className="rounded-3xl border border-white/10 bg-white/10 p-4 text-sm font-bold text-white shadow-lg shadow-slate-950/10"
+                >
                   {item}
                 </div>
               ))}
@@ -78,12 +85,16 @@ export function Login() {
                 <span className="rounded-full bg-pine-400/20 px-3 py-1 text-pine-100">Active</span>
               </div>
               <div className="mt-4 space-y-3">
-                {['Device verification', 'Session encryption', 'Fraud signal review'].map((item) => (
-                  <div key={item} className="flex items-center gap-3 text-sm text-slate-100">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-pine-400/20 text-pine-100">✓</span>
-                    {item}
-                  </div>
-                ))}
+                {['Device verification', 'Session encryption', 'Fraud signal review'].map(
+                  (item) => (
+                    <div key={item} className="flex items-center gap-3 text-sm text-slate-100">
+                      <span className="grid h-7 w-7 place-items-center rounded-full bg-pine-400/20 text-pine-100">
+                        ✓
+                      </span>
+                      {item}
+                    </div>
+                  ),
+                )}
               </div>
             </div>
           </div>
@@ -91,9 +102,13 @@ export function Login() {
 
         <section className="card mx-auto w-full max-w-md p-7 sm:p-8">
           <div className="mb-7">
-            <p className="text-sm font-bold uppercase tracking-[0.22em] text-pine-600">Welcome back</p>
-            <h2 className="mt-2 text-3xl font-black text-pine-950">Secure sign in</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">Use your Pine Truist username to continue to your dashboard.</p>
+            <p className="text-sm font-bold uppercase tracking-[0.22em] text-pine-600">
+              Welcome back
+            </p>
+            <h2 className="mt-2 text-3xl font-black text-pine-900">Secure sign in</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Use your Pine Truist username to continue to your dashboard.
+            </p>
           </div>
 
           {registered && (
@@ -147,7 +162,10 @@ export function Login() {
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
               />
-              <label htmlFor="remember" className="cursor-pointer text-sm font-medium text-pine-800">
+              <label
+                htmlFor="remember"
+                className="cursor-pointer text-sm font-medium text-pine-800"
+              >
                 Remember this device
               </label>
             </div>

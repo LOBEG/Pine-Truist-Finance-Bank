@@ -60,7 +60,10 @@ function PhonePreview() {
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3">
             {['Transfer', 'Deposit'].map((item) => (
-              <div key={item} className="rounded-2xl bg-white/10 p-4 text-center text-sm font-bold text-white">
+              <div
+                key={item}
+                className="rounded-2xl bg-white/10 p-4 text-center text-sm font-bold text-white"
+              >
                 {item}
               </div>
             ))}
@@ -86,7 +89,7 @@ function PhonePreview() {
 
 export function Landing() {
   return (
-    <div className="min-h-screen overflow-hidden bg-slate-950 text-pine-950">
+    <div className="min-h-screen overflow-hidden bg-slate-950 text-pine-900">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/80 text-white backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <BrandLogo variant="dark" />
@@ -120,7 +123,9 @@ export function Landing() {
                 Banking redesigned around clarity, security, and control.
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">
-                Pine Truist Finance Bank brings everyday money management into a polished, protected workspace—built for quick onboarding, confident transfers, and always-on account access.
+                Pine Truist Finance Bank brings everyday money management into a polished, protected
+                workspace—built for quick onboarding, confident transfers, and always-on account
+                access.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link to="/register" className="btn-primary px-8">
@@ -132,7 +137,10 @@ export function Landing() {
               </div>
               <div className="mt-10 grid max-w-xl grid-cols-3 gap-3 text-center">
                 {['FDIC insured', 'Bank-grade controls', 'Real-time alerts'].map((item) => (
-                  <div key={item} className="rounded-3xl border border-white/10 bg-white/10 p-4 text-sm font-bold text-white/90 backdrop-blur">
+                  <div
+                    key={item}
+                    className="rounded-3xl border border-white/10 bg-white/10 p-4 text-sm font-bold text-white/90 backdrop-blur"
+                  >
                     {item}
                   </div>
                 ))}
@@ -146,22 +154,28 @@ export function Landing() {
           <div className="mx-auto max-w-6xl">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.24em] text-pine-600">Services</p>
-                <h2 className="mt-3 max-w-2xl text-3xl font-black text-pine-950 md:text-4xl">
+                <p className="text-sm font-black uppercase tracking-[0.24em] text-pine-600">
+                  Services
+                </p>
+                <h2 className="mt-3 max-w-2xl text-3xl font-black text-pine-900 md:text-4xl">
                   A premium banking experience without the clutter.
                 </h2>
               </div>
               <p className="max-w-md text-sm leading-6 text-slate-600">
-                The redesigned experience emphasizes clean account actions, readable content, and trustworthy visual cues.
+                The redesigned experience emphasizes clean account actions, readable content, and
+                trustworthy visual cues.
               </p>
             </div>
             <div className="mt-10 grid gap-5 md:grid-cols-3">
               {serviceCards.map((card) => (
-                <article key={card.title} className="card group transition duration-200 hover:-translate-y-1">
+                <article
+                  key={card.title}
+                  className="card group transition duration-200 hover:-translate-y-1"
+                >
                   <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-3xl bg-pine-900 text-xl font-black text-gold-400 shadow-lg shadow-pine-900/20">
                     {card.metric}
                   </div>
-                  <h3 className="text-xl font-black text-pine-950">{card.title}</h3>
+                  <h3 className="text-xl font-black text-pine-900">{card.title}</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600">{card.desc}</p>
                 </article>
               ))}
@@ -170,17 +184,23 @@ export function Landing() {
         </section>
 
         <section id="security" className="bg-white px-4 py-20">
-          <div className="mx-auto grid max-w-6xl gap-10 rounded-[2rem] bg-pine-950 p-6 text-white shadow-2xl shadow-pine-950/20 md:grid-cols-[0.95fr_1.05fr] md:p-10">
+          <div className="mx-auto grid max-w-6xl gap-10 rounded-[2rem] bg-pine-900 p-6 text-white shadow-2xl shadow-pine-900/20 md:grid-cols-[0.95fr_1.05fr] md:p-10">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.24em] text-gold-400">Security</p>
+              <p className="text-sm font-black uppercase tracking-[0.24em] text-gold-400">
+                Security
+              </p>
               <h2 className="mt-3 text-3xl font-black md:text-4xl">Confidence at every step.</h2>
               <p className="mt-4 leading-7 text-pine-100">
-                From application through login and transfers, Pine Truist presents protection in a clearer, calmer interface.
+                From application through login and transfers, Pine Truist presents protection in a
+                clearer, calmer interface.
               </p>
             </div>
             <div className="grid gap-3">
               {securityHighlights.map((item) => (
-                <div key={item} className="flex items-start gap-3 rounded-3xl border border-white/10 bg-white/10 p-4 text-sm text-pine-50">
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-3xl border border-white/10 bg-white/10 p-4 text-sm text-pine-50"
+                >
                   <span className="mt-0.5 grid h-8 w-8 flex-none place-items-center rounded-full bg-pine-400/20 text-pine-100">
                     <CheckIcon />
                   </span>
@@ -193,12 +213,15 @@ export function Landing() {
 
         <section id="support" className="bg-[#f7fbf8] px-4 py-20">
           <div className="mx-auto max-w-4xl text-center">
-            <p className="text-sm font-black uppercase tracking-[0.24em] text-pine-600">Ready when you are</p>
-            <h2 className="mt-3 text-3xl font-black text-pine-950 md:text-4xl">
+            <p className="text-sm font-black uppercase tracking-[0.24em] text-pine-600">
+              Ready when you are
+            </p>
+            <h2 className="mt-3 text-3xl font-black text-pine-900 md:text-4xl">
               Open an account or return to your dashboard.
             </h2>
             <p className="mx-auto mt-4 max-w-2xl leading-7 text-slate-600">
-              A refined landing, login, and registration flow now guides customers with stronger hierarchy, softer surfaces, and clearer calls to action.
+              A refined landing, login, and registration flow now guides customers with stronger
+              hierarchy, softer surfaces, and clearer calls to action.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Link to="/register" className="btn-primary px-8">
