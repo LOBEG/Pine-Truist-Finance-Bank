@@ -11,82 +11,6 @@ const SECURITY_QUESTIONS = [
   'What was the make of your first car?',
 ];
 
-function PasswordStrength({ password }) {
-  const checks = {
-    length: password.length >= 12,
-    upper: /[A-Z]/.test(password),
-    lower: /[a-z]/.test(password),
-    digit: /\d/.test(password),
-    symbol: /[^a-zA-Z0-9]/.test(password),
-  };
-  const score = Object.values(checks).filter(Boolean).length;
-  const label = score <= 1 ? 'Weak' : score <= 3 ? 'Fair' : score === 4 ? 'Good' : 'Strong';
-  const color =
-    score <= 1
-      ? 'bg-red-500'
-      : score <= 3
-        ? 'bg-amber-500'
-        : score === 4
-          ? 'bg-pine-400'
-          : 'bg-pine-600';
-
-  if (!password) return null;
-  return (
-    <div className="mt-2 space-y-1">
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <div
-            key={n}
-            className={`h-1 flex-1 rounded-full transition-colors ${n <= score ? color : 'bg-pine-100'}`}
-          />
-        ))}
-      </div>
-      <div className="flex justify-between items-center">
-        <p className="text-xs text-pine-600">{label}</p>
-        <div className="flex gap-3 text-xs text-red-500">
-          {!checks.length && <span>12+ chars</span>}
-          {!checks.upper && <span>Uppercase</span>}
-          {!checks.lower && <span>Lowercase</span>}
-          {!checks.digit && <span>Digit</span>}
-          {!checks.symbol && <span>Symbol</span>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StepIndicator({ current, total }) {
-  return (
-    <div className="mb-8 flex items-center justify-center gap-2 rounded-3xl bg-pine-50/80 p-3">
-      {Array.from({ length: total }, (_, i) => {
-        const s = i + 1;
-        const done = s < current;
-        const active = s === current;
-        return (
-          <div key={s} className="flex items-center">
-            <div
-              className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold border-2 transition-all ${
-                done
-                  ? 'border-pine-700 bg-pine-700 text-white shadow-lg shadow-pine-900/20'
-                  : active
-                    ? 'border-gold-400 bg-white text-pine-800 shadow-sm'
-                    : 'border-pine-100 bg-white text-pine-300'
-              }`}
-            >
-              {done ? '✓' : s}
-            </div>
-            {s < total && (
-              <div
-                className={`mx-1 h-0.5 w-12 rounded-full transition-colors sm:w-20 ${done ? 'bg-pine-700' : 'bg-pine-100'}`}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 const STEP_LABELS = ['Personal', 'Security', 'Account', 'Review'];
 
 const INITIAL = {
@@ -111,7 +35,90 @@ const INITIAL = {
 
 function FieldError({ msg }) {
   if (!msg) return null;
-  return <p className="text-xs text-red-600 mt-1">{msg}</p>;
+  return <p className="mt-1 text-xs text-red-600">{msg}</p>;
+}
+
+function PasswordStrength({ password }) {
+  const checks = {
+    length: password.length >= 12,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    digit: /\d/.test(password),
+    symbol: /[^a-zA-Z0-9]/.test(password),
+  };
+  const score = Object.values(checks).filter(Boolean).length;
+  const label = score <= 1 ? 'Weak' : score <= 3 ? 'Fair' : score === 4 ? 'Good' : 'Strong';
+  const color =
+    score <= 1
+      ? 'bg-red-500'
+      : score <= 3
+        ? 'bg-amber-500'
+        : score === 4
+          ? 'bg-pine-400'
+          : 'bg-pine-700';
+
+  if (!password) return null;
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <div
+            key={n}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${n <= score ? color : 'bg-slate-200'}`}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap justify-between gap-2 text-xs">
+        <p className="font-semibold text-slate-700">{label}</p>
+        <div className="flex flex-wrap gap-3 text-slate-500">
+          {!checks.length && <span>12+ chars</span>}
+          {!checks.upper && <span>Uppercase</span>}
+          {!checks.lower && <span>Lowercase</span>}
+          {!checks.digit && <span>Digit</span>}
+          {!checks.symbol && <span>Symbol</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepIndicator({ current, total, labels }) {
+  return (
+    <ol className="mb-8 grid grid-cols-4 gap-2">
+      {Array.from({ length: total }, (_, i) => {
+        const s = i + 1;
+        const done = s < current;
+        const active = s === current;
+        return (
+          <li key={s} className="flex flex-col gap-2">
+            <div
+              className={`h-1.5 rounded-full ${
+                done ? 'bg-pine-700' : active ? 'bg-pine-700' : 'bg-slate-200'
+              }`}
+            />
+            <div className="flex items-center gap-2 text-xs">
+              <span
+                className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold ${
+                  done
+                    ? 'bg-pine-700 text-white'
+                    : active
+                      ? 'bg-pine-700 text-white'
+                      : 'bg-slate-200 text-slate-600'
+                }`}
+              >
+                {done ? '✓' : s}
+              </span>
+              <span
+                className={`font-semibold ${active || done ? 'text-slate-900' : 'text-slate-400'}`}
+              >
+                {labels[i]}
+              </span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
 function validateStep1(f) {
@@ -153,6 +160,27 @@ function validateStep3(f) {
   if (!f.accountType) e.accountType = 'Please select an account type.';
   return e;
 }
+
+const ACCOUNT_TYPES = [
+  {
+    type: 'checking',
+    title: 'Personal Checking',
+    rate: 'No monthly fee',
+    desc: 'Everyday spending with debit card, mobile deposit, and same-day transfers.',
+  },
+  {
+    type: 'savings',
+    title: 'High-Yield Savings',
+    rate: '4.40% APY',
+    desc: 'Earn competitive interest with no minimum balance and unlimited internal transfers.',
+  },
+  {
+    type: 'business',
+    title: 'Business Banking',
+    rate: 'For owners',
+    desc: 'ACH, wires, and multi-user permissions designed for small and growing businesses.',
+  },
+];
 
 export function Register() {
   const { register, login } = useAuth();
@@ -221,485 +249,498 @@ export function Register() {
   const ssnDisplay = !ssnFocused && form.ssn.length >= 5 ? `•••-••-${form.ssn.slice(5)}` : form.ssn;
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_18%_12%,_rgba(98,175,116,0.24),_transparent_30%),radial-gradient(circle_at_90%_8%,_rgba(224,185,74,0.24),_transparent_28%),linear-gradient(135deg,_#06111d_0%,_#10243c_48%,_#123524_100%)] text-white">
+    <div className="flex min-h-screen flex-col bg-white text-slate-900">
       {/* Header */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link to="/" aria-label="Pine Truist home">
-          <BrandLogo variant="dark" />
-        </Link>
-        <Link
-          to="/login"
-          className="hidden rounded-full border border-white/20 px-4 py-2 text-sm font-bold text-white/90 transition hover:bg-white/10 sm:inline-flex"
-        >
-          Sign in
-        </Link>
+      <header className="border-b border-slate-200">
+        <div className="container-pine flex items-center justify-between py-4">
+          <Link to="/" aria-label="Pine Truist Finance Bank home">
+            <BrandLogo variant="light" />
+          </Link>
+          <div className="text-sm text-slate-600">
+            Already a customer?{' '}
+            <Link to="/login" className="font-semibold text-pine-700 hover:text-pine-900">
+              Sign in
+            </Link>
+          </div>
+        </div>
       </header>
 
-      {/* Main */}
-      <main className="mx-auto grid min-h-[calc(100vh-96px)] w-full max-w-6xl items-center gap-10 px-4 pb-12 xl:grid-cols-[0.85fr_1.15fr]">
-        <aside className="relative hidden xl:block">
-          <div className="absolute -left-14 top-10 h-44 w-44 rounded-full bg-pine-400/20 blur-3xl" />
-          <div className="glass-panel relative p-8 text-white">
-            <p className="eyebrow mb-5">Account Application</p>
-            <h2 className="mb-4 text-5xl font-black leading-tight tracking-tight">
-              Open your account in minutes
-            </h2>
-            <p className="text-lg leading-8 text-slate-200">
-              Our secure application process collects the information required for identity
-              verification and regulatory compliance. Your personal data is encrypted end-to-end and
-              protected by bank-grade security throughout the application process.
-            </p>
-            <div className="mt-8 space-y-3">
-              {[
-                'Identity Verification',
-                'Encrypted Data Storage',
-                'Instant Account Activation',
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-3xl border border-white/10 bg-white/10 p-4 font-bold ring-1 ring-white/10"
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-        <section className="card mx-auto w-full max-w-2xl p-6 sm:p-8">
-          <div className="mb-6">
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-pine-600">
-              Account application
-            </p>
-            <h1 className="mt-2 text-3xl font-black text-pine-900">
-              Open your Pine Truist account
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Step {step} of 4 — {STEP_LABELS[step - 1]} Information
-            </p>
-          </div>
-
-          <StepIndicator current={step} total={4} />
-
-          {/* ── STEP 1: Personal Info ─────────────────────── */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-black text-pine-900">Personal information</h2>
-              <p className="text-sm text-gray-600">
-                Please provide your legal information as it appears on government-issued
-                identification.
+      <main className="flex-1">
+        <div className="container-pine grid gap-10 py-10 lg:grid-cols-[1fr_1.4fr] lg:py-14">
+          {/* Sidebar marketing */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 rounded-3xl bg-pine-900 p-8 text-white">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-400">
+                Open an account
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="label" htmlFor="r-name">
-                    Full legal name
-                  </label>
-                  <input
-                    id="r-name"
-                    className="input"
-                    value={form.fullName}
-                    onChange={(e) => upd('fullName', e.target.value)}
-                  />
-                  <FieldError msg={errors.fullName} />
-                </div>
+              <h1 className="mt-3 text-3xl font-bold leading-snug">
+                A few minutes to a modern bank account.
+              </h1>
+              <p className="mt-4 text-[15px] leading-7 text-pine-100">
+                Apply online for personal or business banking. You will need a valid ID, Social
+                Security number, and U.S. mailing address.
+              </p>
+              <ol className="mt-8 space-y-4 text-[15px]">
+                {[
+                  ['Personal information', 'Tell us who you are and where you live.'],
+                  ['Account security', 'Set your password and recovery question.'],
+                  ['Choose your account', 'Pick checking, savings, or business.'],
+                  ['Review and submit', 'Confirm details and accept disclosures.'],
+                ].map(([t, d], i) => (
+                  <li key={t} className="flex gap-3">
+                    <span className="grid h-7 w-7 flex-none place-items-center rounded-full bg-white/10 text-sm font-bold text-gold-400">
+                      {i + 1}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-white">{t}</p>
+                      <p className="text-sm text-pine-100">{d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              <div className="mt-8 rounded-xl border border-white/10 bg-white/5 p-4 text-xs leading-6 text-pine-100">
+                Your data is encrypted in transit and at rest. Pine Truist Finance Bank is a Member
+                FDIC. Deposits are insured up to $250,000 per depositor.
+              </div>
+            </div>
+          </aside>
+
+          {/* Form */}
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
+            <div className="mb-6">
+              <p className="eyebrow">Account application</p>
+              <h2 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
+                Open your Pine Truist account
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Step {step} of 4 — {STEP_LABELS[step - 1]} information
+              </p>
+            </div>
+
+            <StepIndicator current={step} total={4} labels={STEP_LABELS} />
+
+            {/* STEP 1 */}
+            {step === 1 && (
+              <div className="space-y-5">
                 <div>
-                  <label className="label" htmlFor="r-dob">
-                    Date of birth
-                  </label>
-                  <input
-                    id="r-dob"
-                    className="input"
-                    type="date"
-                    value={form.dateOfBirth}
-                    onChange={(e) => upd('dateOfBirth', e.target.value)}
-                  />
-                  <FieldError msg={errors.dateOfBirth} />
-                </div>
-                <div>
-                  <label className="label" htmlFor="r-phone">
-                    Phone (E.164)
-                  </label>
-                  <input
-                    id="r-phone"
-                    className="input"
-                    type="tel"
-                    placeholder="+12125551234"
-                    value={form.phone}
-                    onChange={(e) => upd('phone', e.target.value)}
-                  />
-                  <FieldError msg={errors.phone} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="label" htmlFor="r-email">
-                    Email address
-                  </label>
-                  <input
-                    id="r-email"
-                    className="input"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => upd('email', e.target.value)}
-                  />
-                  <FieldError msg={errors.email} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="label" htmlFor="r-addr1">
-                    Street address
-                  </label>
-                  <input
-                    id="r-addr1"
-                    className="input"
-                    value={form.addressLine1}
-                    onChange={(e) => upd('addressLine1', e.target.value)}
-                  />
-                  <FieldError msg={errors.addressLine1} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="label" htmlFor="r-addr2">
-                    Apt / Suite (optional)
-                  </label>
-                  <input
-                    id="r-addr2"
-                    className="input"
-                    value={form.addressLine2}
-                    onChange={(e) => upd('addressLine2', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="label" htmlFor="r-city">
-                    City
-                  </label>
-                  <input
-                    id="r-city"
-                    className="input"
-                    value={form.city}
-                    onChange={(e) => upd('city', e.target.value)}
-                  />
-                  <FieldError msg={errors.city} />
-                </div>
-                <div>
-                  <label className="label" htmlFor="r-state">
-                    State
-                  </label>
-                  <input
-                    id="r-state"
-                    className="input"
-                    maxLength={2}
-                    placeholder="NY"
-                    value={form.state}
-                    onChange={(e) => upd('state', e.target.value.toUpperCase())}
-                  />
-                  <FieldError msg={errors.state} />
-                </div>
-                <div>
-                  <label className="label" htmlFor="r-zip">
-                    ZIP code
-                  </label>
-                  <input
-                    id="r-zip"
-                    className="input"
-                    placeholder="10001"
-                    value={form.postalCode}
-                    onChange={(e) => upd('postalCode', e.target.value)}
-                  />
-                  <FieldError msg={errors.postalCode} />
-                </div>
-                <div>
-                  <label className="label" htmlFor="r-ssn">
-                    Social Security Number
-                  </label>
-                  <input
-                    id="r-ssn"
-                    className="input font-mono tracking-widest"
-                    inputMode="numeric"
-                    maxLength={9}
-                    placeholder="123456789"
-                    value={ssnDisplay}
-                    onFocus={() => setSsnFocused(true)}
-                    onBlur={() => setSsnFocused(false)}
-                    onChange={(e) => upd('ssn', e.target.value.replace(/\D/g, '').slice(0, 9))}
-                  />
-                  <p className="text-xs text-pine-600 mt-1">
-                    Required for identity verification. Masked for security.
+                  <h3 className="text-lg font-semibold text-slate-900">Personal information</h3>
+                  <p className="text-sm text-slate-600">
+                    Provide your legal information as it appears on government-issued ID.
                   </p>
-                  <FieldError msg={errors.ssn} />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className="label" htmlFor="r-name">
+                      Full legal name
+                    </label>
+                    <input
+                      id="r-name"
+                      className="input"
+                      autoComplete="name"
+                      value={form.fullName}
+                      onChange={(e) => upd('fullName', e.target.value)}
+                    />
+                    <FieldError msg={errors.fullName} />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="r-dob">
+                      Date of birth
+                    </label>
+                    <input
+                      id="r-dob"
+                      className="input"
+                      type="date"
+                      value={form.dateOfBirth}
+                      onChange={(e) => upd('dateOfBirth', e.target.value)}
+                    />
+                    <FieldError msg={errors.dateOfBirth} />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="r-phone">
+                      Phone number
+                    </label>
+                    <input
+                      id="r-phone"
+                      className="input"
+                      type="tel"
+                      placeholder="+12125551234"
+                      value={form.phone}
+                      onChange={(e) => upd('phone', e.target.value)}
+                    />
+                    <FieldError msg={errors.phone} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label" htmlFor="r-email">
+                      Email address
+                    </label>
+                    <input
+                      id="r-email"
+                      className="input"
+                      type="email"
+                      autoComplete="email"
+                      value={form.email}
+                      onChange={(e) => upd('email', e.target.value)}
+                    />
+                    <FieldError msg={errors.email} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label" htmlFor="r-addr1">
+                      Street address
+                    </label>
+                    <input
+                      id="r-addr1"
+                      className="input"
+                      autoComplete="address-line1"
+                      value={form.addressLine1}
+                      onChange={(e) => upd('addressLine1', e.target.value)}
+                    />
+                    <FieldError msg={errors.addressLine1} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label" htmlFor="r-addr2">
+                      Apt / suite (optional)
+                    </label>
+                    <input
+                      id="r-addr2"
+                      className="input"
+                      autoComplete="address-line2"
+                      value={form.addressLine2}
+                      onChange={(e) => upd('addressLine2', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="r-city">
+                      City
+                    </label>
+                    <input
+                      id="r-city"
+                      className="input"
+                      autoComplete="address-level2"
+                      value={form.city}
+                      onChange={(e) => upd('city', e.target.value)}
+                    />
+                    <FieldError msg={errors.city} />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="r-state">
+                      State
+                    </label>
+                    <input
+                      id="r-state"
+                      className="input"
+                      maxLength={2}
+                      placeholder="NY"
+                      value={form.state}
+                      onChange={(e) => upd('state', e.target.value.toUpperCase())}
+                    />
+                    <FieldError msg={errors.state} />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="r-zip">
+                      ZIP code
+                    </label>
+                    <input
+                      id="r-zip"
+                      className="input"
+                      placeholder="10001"
+                      value={form.postalCode}
+                      onChange={(e) => upd('postalCode', e.target.value)}
+                    />
+                    <FieldError msg={errors.postalCode} />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="r-ssn">
+                      Social Security number
+                    </label>
+                    <input
+                      id="r-ssn"
+                      className="input font-mono tracking-widest"
+                      inputMode="numeric"
+                      maxLength={9}
+                      placeholder="123456789"
+                      value={ssnDisplay}
+                      onFocus={() => setSsnFocused(true)}
+                      onBlur={() => setSsnFocused(false)}
+                      onChange={(e) => upd('ssn', e.target.value.replace(/\D/g, '').slice(0, 9))}
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Required for identity verification. Masked while not focused.
+                    </p>
+                    <FieldError msg={errors.ssn} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label" htmlFor="r-user">
+                      Username
+                    </label>
+                    <input
+                      id="r-user"
+                      className="input"
+                      autoComplete="username"
+                      value={form.username}
+                      onChange={(e) => upd('username', e.target.value)}
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Your online banking username. This cannot be changed later.
+                    </p>
+                    <FieldError msg={errors.username} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label" htmlFor="r-pw">
+                      Password
+                    </label>
+                    <input
+                      id="r-pw"
+                      className="input"
+                      type="password"
+                      autoComplete="new-password"
+                      value={form.password}
+                      onChange={(e) => upd('password', e.target.value)}
+                    />
+                    <PasswordStrength password={form.password} />
+                    <FieldError msg={errors.password} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2 */}
+            {step === 2 && (
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Account security</h3>
+                  <p className="text-sm text-slate-600">
+                    Confirm your password and set a recovery question. You can enable two-factor
+                    authentication once your account is open.
+                  </p>
                 </div>
                 <div>
-                  <label className="label" htmlFor="r-user">
-                    Username
+                  <label className="label" htmlFor="r-confirm">
+                    Confirm password
                   </label>
                   <input
-                    id="r-user"
-                    className="input"
-                    autoComplete="username"
-                    value={form.username}
-                    onChange={(e) => upd('username', e.target.value)}
-                  />
-                  <p className="text-xs text-pine-600 mt-1">
-                    Your online banking username (cannot be changed)
-                  </p>
-                  <FieldError msg={errors.username} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="label" htmlFor="r-pw">
-                    Password
-                  </label>
-                  <input
-                    id="r-pw"
+                    id="r-confirm"
                     className="input"
                     type="password"
                     autoComplete="new-password"
-                    value={form.password}
-                    onChange={(e) => upd('password', e.target.value)}
+                    value={form.confirmPassword}
+                    onChange={(e) => upd('confirmPassword', e.target.value)}
                   />
-                  <PasswordStrength password={form.password} />
-                  <FieldError msg={errors.password} />
+                  <FieldError msg={errors.confirmPassword} />
+                </div>
+                <div>
+                  <label className="label" htmlFor="r-sq">
+                    Security question
+                  </label>
+                  <select
+                    id="r-sq"
+                    className="input"
+                    value={form.securityQuestion}
+                    onChange={(e) => upd('securityQuestion', e.target.value)}
+                  >
+                    {SECURITY_QUESTIONS.map((q) => (
+                      <option key={q} value={q}>
+                        {q}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label" htmlFor="r-sa">
+                    Your answer
+                  </label>
+                  <input
+                    id="r-sa"
+                    className="input"
+                    autoComplete="off"
+                    value={form.securityAnswer}
+                    onChange={(e) => upd('securityAnswer', e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    Used for account recovery. Answers are case-insensitive.
+                  </p>
+                  <FieldError msg={errors.securityAnswer} />
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                  <p className="font-semibold text-slate-900">Multi-factor authentication</p>
+                  <p className="mt-1">
+                    For added security, you can enable two-factor authentication after account
+                    creation from your account settings.
+                  </p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ── STEP 2: Security ─────────────────────────── */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-black text-pine-900">Account security</h2>
-              <p className="text-sm text-gray-600">
-                Set up your password and security question to protect your account.
-              </p>
-              <div>
-                <label className="label" htmlFor="r-confirm">
-                  Confirm password
-                </label>
-                <input
-                  id="r-confirm"
-                  className="input"
-                  type="password"
-                  autoComplete="new-password"
-                  value={form.confirmPassword}
-                  onChange={(e) => upd('confirmPassword', e.target.value)}
-                />
-                <FieldError msg={errors.confirmPassword} />
+            {/* STEP 3 */}
+            {step === 3 && (
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Choose your account</h3>
+                  <p className="text-sm text-slate-600">
+                    Select the account that best fits your needs. You can add more accounts later.
+                  </p>
+                </div>
+                <FieldError msg={errors.accountType} />
+                <div className="grid grid-cols-1 gap-3">
+                  {ACCOUNT_TYPES.map(({ type, title, rate, desc }) => {
+                    const active = form.accountType === type;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => upd('accountType', type)}
+                        className={`flex items-start gap-4 rounded-2xl border p-5 text-left transition ${
+                          active
+                            ? 'border-pine-700 bg-pine-50 ring-2 ring-pine-200'
+                            : 'border-slate-200 bg-white hover:border-pine-300'
+                        }`}
+                      >
+                        <span
+                          className={`mt-1 grid h-5 w-5 flex-none place-items-center rounded-full border-2 ${
+                            active ? 'border-pine-700 bg-pine-700 text-white' : 'border-slate-300'
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {active && '✓'}
+                        </span>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="font-semibold text-slate-900">{title}</p>
+                            <span className="text-xs font-semibold text-pine-700">{rate}</span>
+                          </div>
+                          <p className="mt-1 text-sm text-slate-600">{desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div>
-                <label className="label" htmlFor="r-sq">
-                  Security question
-                </label>
-                <select
-                  id="r-sq"
-                  className="input"
-                  value={form.securityQuestion}
-                  onChange={(e) => upd('securityQuestion', e.target.value)}
-                >
-                  {SECURITY_QUESTIONS.map((q) => (
-                    <option key={q} value={q}>
-                      {q}
-                    </option>
+            )}
+
+            {/* STEP 4 */}
+            {step === 4 && (
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Review and submit</h3>
+                  <p className="text-sm text-slate-600">
+                    Please confirm your information before submitting your application.
+                  </p>
+                </div>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm">
+                  {[
+                    ['Full name', form.fullName],
+                    ['Date of birth', form.dateOfBirth],
+                    ['Phone', form.phone],
+                    ['Email', form.email],
+                    [
+                      'Address',
+                      [form.addressLine1, form.addressLine2, form.city, form.state, form.postalCode]
+                        .filter(Boolean)
+                        .join(', '),
+                    ],
+                    ['SSN', `•••-••-${form.ssn.slice(5)}`],
+                    ['Username', form.username],
+                    [
+                      'Account type',
+                      form.accountType
+                        ? form.accountType.charAt(0).toUpperCase() + form.accountType.slice(1)
+                        : '',
+                    ],
+                  ].map(([lbl, val]) => (
+                    <div key={lbl} className="contents">
+                      <dt className="font-semibold text-slate-500">{lbl}</dt>
+                      <dd className="break-all text-slate-900">{val}</dd>
+                    </div>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="label" htmlFor="r-sa">
-                  Your answer
-                </label>
-                <input
-                  id="r-sa"
-                  className="input"
-                  autoComplete="off"
-                  value={form.securityAnswer}
-                  onChange={(e) => upd('securityAnswer', e.target.value)}
-                />
-                <p className="text-xs text-pine-600 mt-1">
-                  Used for account recovery. Case-insensitive.
-                </p>
-                <FieldError msg={errors.securityAnswer} />
-              </div>
-              <div className="p-4 bg-pine-50 rounded-xl ring-1 ring-pine-100 text-sm">
-                <p className="font-semibold text-pine-900 flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5 text-pine-700"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0110 0v4" />
-                  </svg>
-                  Multi-Factor Authentication
-                </p>
-                <p className="text-pine-700 mt-1">
-                  For added security, you can enable two-factor authentication after account
-                  creation through your account settings.
-                </p>
-              </div>
-            </div>
-          )}
+                </dl>
 
-          {/* ── STEP 3: Account Type ─────────────────────── */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-black text-pine-900">Select account type</h2>
-              <p className="text-sm text-gray-600">
-                Choose the account that best fits your financial needs.
-              </p>
-              <FieldError msg={errors.accountType} />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  {
-                    type: 'checking',
-                    title: 'Personal Checking',
-                    desc: 'Everyday banking with no monthly fees, free transfers, and instant access to your funds.',
-                    iconPath:
-                      'M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z',
-                  },
-                  {
-                    type: 'savings',
-                    title: 'Savings Account',
-                    desc: 'High-yield savings account to help you reach your financial goals with competitive interest rates.',
-                    iconPath: 'M3 3v18h18M7 16l4-4 4 4 4-6',
-                  },
-                  {
-                    type: 'business',
-                    title: 'Business Account',
-                    desc: 'Full-featured business banking with ACH, wire transfers, and multi-user access controls.',
-                    iconPath:
-                      'M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 10v11M12 10v11M16 10v11',
-                  },
-                ].map(({ type, title, desc, iconPath }) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => upd('accountType', type)}
-                    className={`text-left p-4 rounded-2xl border-2 transition-all ${
-                      form.accountType === type
-                        ? 'border-pine-700 bg-pine-50 shadow-lg shadow-pine-900/10'
-                        : 'border-pine-100 bg-white hover:-translate-y-0.5 hover:border-pine-300 hover:shadow-md'
-                    }`}
-                  >
-                    <svg
-                      className="w-8 h-8 text-pine-700"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d={iconPath} />
-                    </svg>
-                    <p className="font-bold text-pine-900 mt-2">{title}</p>
-                    <p className="text-xs text-pine-700 mt-1">{desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  <p className="font-semibold">Important disclosures</p>
+                  <p className="mt-1">
+                    By submitting this application you agree to our{' '}
+                    <a href="#" className="font-semibold underline">
+                      Terms of Service
+                    </a>
+                    ,{' '}
+                    <a href="#" className="font-semibold underline">
+                      Privacy Policy
+                    </a>
+                    , and{' '}
+                    <a href="#" className="font-semibold underline">
+                      Electronic Consent Agreement
+                    </a>
+                    . Member FDIC. Deposits insured up to $250,000 per depositor.
+                  </p>
+                </div>
 
-          {/* ── STEP 4: Review ───────────────────────────── */}
-          {step === 4 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-black text-pine-900">Review and submit</h2>
-              <p className="text-sm text-gray-600">
-                Please review your information before submitting your application.
-              </p>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-3xl bg-pine-50 p-4 text-sm ring-1 ring-pine-100">
-                {[
-                  ['Full name', form.fullName],
-                  ['Date of birth', form.dateOfBirth],
-                  ['Phone', form.phone],
-                  ['Email', form.email],
-                  [
-                    'Address',
-                    [form.addressLine1, form.addressLine2, form.city, form.state, form.postalCode]
-                      .filter(Boolean)
-                      .join(', '),
-                  ],
-                  ['SSN', `•••-••-${form.ssn.slice(5)}`],
-                  ['Username', form.username],
-                  [
-                    'Account type',
-                    form.accountType.charAt(0).toUpperCase() + form.accountType.slice(1),
-                  ],
-                ].map(([lbl, val]) => (
-                  <>
-                    <dt key={`dt-${lbl}`} className="font-medium text-pine-700">
-                      {lbl}
-                    </dt>
-                    <dd key={`dd-${lbl}`} className="text-pine-900 break-all">
-                      {val}
-                    </dd>
-                  </>
-                ))}
-              </dl>
-
-              <div className="rounded-3xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200">
-                <p className="font-semibold mb-1">Important Disclosures</p>
-                <p>
-                  By submitting this application, you agree to Pine Truist Finance Bank&apos;s{' '}
-                  <a href="#" className="underline font-medium">
-                    Terms of Service
-                  </a>
-                  ,{' '}
-                  <a href="#" className="underline font-medium">
-                    Privacy Policy
-                  </a>
-                  , and{' '}
-                  <a href="#" className="underline font-medium">
-                    Electronic Consent Agreement
-                  </a>
-                  . Member FDIC. Your deposits are insured up to $250,000 per depositor.
-                </p>
-              </div>
-
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 rounded border-pine-300 text-pine-700 focus:ring-pine-500"
-                  checked={form.agreedToTerms}
-                  onChange={(e) => upd('agreedToTerms', e.target.checked)}
-                />
-                <span className="text-sm text-pine-800">
+                <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 rounded border-slate-300 text-pine-700 focus:ring-pine-500"
+                    checked={form.agreedToTerms}
+                    onChange={(e) => upd('agreedToTerms', e.target.checked)}
+                  />
                   I have read and agree to the Terms of Service, Privacy Policy, and Electronic
                   Consent Agreement.
-                </span>
-              </label>
-              <FieldError msg={errors.agreedToTerms} />
+                </label>
+                <FieldError msg={errors.agreedToTerms} />
 
-              {serverError && (
-                <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg p-3">
-                  {serverError}
-                </div>
+                {serverError && (
+                  <div
+                    role="alert"
+                    className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                  >
+                    {serverError}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="mt-10 flex justify-between gap-3 border-t border-slate-200 pt-6">
+              {step > 1 ? (
+                <button type="button" className="btn-secondary" onClick={back} disabled={busy}>
+                  ← Back
+                </button>
+              ) : (
+                <Link to="/login" className="btn-secondary">
+                  Cancel
+                </Link>
+              )}
+              {step < 4 ? (
+                <button type="button" className="btn-primary" onClick={advance}>
+                  Continue
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={submit}
+                  disabled={busy || !form.agreedToTerms}
+                >
+                  {busy ? 'Opening account…' : 'Open my account'}
+                </button>
               )}
             </div>
-          )}
-
-          {/* Navigation */}
-          <div className="mt-8 flex justify-between gap-4 border-t border-pine-100 pt-6">
-            {step > 1 ? (
-              <button type="button" className="btn-secondary flex-1" onClick={back} disabled={busy}>
-                ← Back
-              </button>
-            ) : (
-              <Link to="/login" className="btn-secondary flex-1 text-center">
-                Cancel
-              </Link>
-            )}
-            {step < 4 ? (
-              <button type="button" className="btn-primary flex-1" onClick={advance}>
-                Continue →
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn-primary flex-1"
-                onClick={submit}
-                disabled={busy || !form.agreedToTerms}
-              >
-                {busy ? 'Opening account…' : 'Open my account'}
-              </button>
-            )}
-          </div>
-        </section>
+          </section>
+        </div>
       </main>
+
+      <footer className="border-t border-slate-200 bg-slate-50">
+        <div className="container-pine flex flex-col items-start justify-between gap-2 py-6 text-xs text-slate-500 sm:flex-row sm:items-center">
+          <p>© {new Date().getFullYear()} Pine Truist Finance Bank, N.A. Member FDIC.</p>
+          <div className="flex gap-4">
+            <a href="#" className="hover:text-slate-700">
+              Privacy
+            </a>
+            <a href="#" className="hover:text-slate-700">
+              Terms
+            </a>
+            <a href="#" className="hover:text-slate-700">
+              Security
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
