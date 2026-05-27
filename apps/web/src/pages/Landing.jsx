@@ -70,22 +70,22 @@ function GreenCheckIcon({ className = 'w-6 h-6' }) {
 const serviceCards = [
   {
     title: 'Digital Checking',
-    desc: 'Open and manage secure everyday banking with instant balances, transfers, deposits, and alerts.',
+    desc: 'Experience modern checking with instant access to your funds, real-time transaction tracking, and seamless money movement between accounts.',
   },
   {
-    title: 'Savings Growth',
-    desc: 'Build reserves with goal-based savings tools and clear visibility into your progress.',
+    title: 'Savings & Growth',
+    desc: 'Build your financial future with competitive interest rates, automated savings tools, and transparent account management.',
   },
   {
-    title: 'Business Banking',
-    desc: 'Bank-ready accounts for payments, wires, vendor transfers, and operational cash flow.',
+    title: 'Transfer Solutions',
+    desc: 'Move money securely with internal transfers, ACH payments, and wire transfer capabilities—all protected by bank-grade security.',
   },
 ];
 
 const helpCards = [
-  'Account specialists are available 24/7 for login, transfer, and security support.',
-  'Real-time fraud monitoring helps protect every session and transaction.',
-  'Encrypted onboarding keeps personal information protected from application to approval.',
+  'Multi-factor authentication and encryption protect your login credentials and personal information at every step.',
+  'Real-time fraud detection monitors transactions around the clock to identify and prevent suspicious activity.',
+  'Secure account recovery options ensure you always have access to your funds when you need them.',
 ];
 
 /* ─── Landing page ──────────────────────────────────────────────────── */
@@ -134,8 +134,7 @@ export function Landing() {
               <span className="font-normal">for Your Modern Life</span>
             </h1>
             <p className="text-slate-200 text-lg mb-8 max-w-xl">
-              Open accounts, monitor balances, and move money with bank-grade controls built for
-              everyday customers and growing businesses.
+              Experience banking built on trust, security, and transparency. Manage your finances with confidence through our secure digital platform—accessible anytime, anywhere.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
               <Link
@@ -153,40 +152,61 @@ export function Landing() {
             </div>
           </div>
           <div className="flex-1 flex justify-center">
-            <svg
-              viewBox="0 0 320 280"
-              className="w-full max-w-sm drop-shadow-2xl"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#2a5a8c" />
-                  <stop offset="100%" stopColor="#1b3a5c" />
-                </linearGradient>
-              </defs>
-              <rect x="60" y="20" width="200" height="240" rx="20" fill="url(#heroGrad)" />
-              <rect x="80" y="60" width="160" height="30" rx="6" fill="#3a8f5c" opacity="0.8" />
-              <text x="160" y="80" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
-                $12,840.50
-              </text>
-              <rect x="80" y="105" width="70" height="25" rx="5" fill="rgba(255,255,255,0.15)" />
-              <text x="115" y="122" textAnchor="middle" fill="white" fontSize="9">
-                Deposit
-              </text>
-              <rect x="160" y="105" width="80" height="25" rx="5" fill="rgba(255,255,255,0.15)" />
-              <text x="200" y="122" textAnchor="middle" fill="white" fontSize="9">
-                Transfer
-              </text>
-              <rect x="80" y="145" width="160" height="1" fill="rgba(255,255,255,0.2)" />
-              <circle cx="95" cy="170" r="8" fill="#3a8f5c" />
-              <rect x="112" y="165" width="80" height="10" rx="3" fill="rgba(255,255,255,0.2)" />
-              <circle cx="95" cy="200" r="8" fill="#e0b94a" />
-              <rect x="112" y="195" width="100" height="10" rx="3" fill="rgba(255,255,255,0.2)" />
-              <circle cx="95" cy="230" r="8" fill="#3a8f5c" />
-              <rect x="112" y="225" width="60" height="10" rx="3" fill="rgba(255,255,255,0.2)" />
-              <circle cx="270" cy="30" r="40" fill="rgba(58,143,92,0.2)" />
-              <circle cx="50" cy="250" r="25" fill="rgba(224,185,74,0.15)" />
-            </svg>
+            <div className="relative w-full max-w-sm">
+              {/* Banking illustration without hardcoded values */}
+              <svg
+                viewBox="0 0 320 320"
+                className="w-full drop-shadow-2xl"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <defs>
+                  <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#2a5a8c" />
+                    <stop offset="100%" stopColor="#1b3a5c" />
+                  </linearGradient>
+                  <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#3a8f5c" />
+                    <stop offset="100%" stopColor="#2f7a4d" />
+                  </linearGradient>
+                </defs>
+                
+                {/* Main card device */}
+                <rect x="40" y="30" width="240" height="260" rx="24" fill="url(#heroGrad)" />
+                <rect x="40" y="30" width="240" height="260" rx="24" fill="rgba(255,255,255,0.02)" />
+                
+                {/* Account balance area - no specific numbers */}
+                <rect x="60" y="65" width="200" height="45" rx="8" fill="url(#cardGrad)" opacity="0.9" />
+                <rect x="75" y="80" width="90" height="8" rx="4" fill="rgba(255,255,255,0.3)" />
+                <rect x="75" y="92" width="50" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
+                
+                {/* Action buttons */}
+                <rect x="60" y="125" width="90" height="32" rx="6" fill="rgba(255,255,255,0.12)" />
+                <rect x="75" y="136" width="60" height="10" rx="2" fill="rgba(255,255,255,0.25)" />
+                
+                <rect x="165" y="125" width="95" height="32" rx="6" fill="rgba(255,255,255,0.12)" />
+                <rect x="180" y="136" width="65" height="10" rx="2" fill="rgba(255,255,255,0.25)" />
+                
+                {/* Transaction list simulation */}
+                <line x1="60" y1="175" x2="260" y2="175" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                
+                {/* Recent transactions - abstract representation */}
+                <circle cx="80" cy="200" r="12" fill="#3a8f5c" opacity="0.8" />
+                <rect x="105" y="195" width="100" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
+                <rect x="105" y="205" width="65" height="4" rx="2" fill="rgba(255,255,255,0.12)" />
+                
+                <circle cx="80" cy="235" r="12" fill="#e0b94a" opacity="0.8" />
+                <rect x="105" y="230" width="85" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
+                <rect x="105" y="240" width="70" height="4" rx="2" fill="rgba(255,255,255,0.12)" />
+                
+                <circle cx="80" cy="270" r="12" fill="#3a8f5c" opacity="0.8" />
+                <rect x="105" y="265" width="95" height="6" rx="3" fill="rgba(255,255,255,0.2)" />
+                <rect x="105" y="275" width="50" height="4" rx="2" fill="rgba(255,255,255,0.12)" />
+                
+                {/* Decorative elements */}
+                <circle cx="280" cy="50" r="45" fill="rgba(58,143,92,0.15)" />
+                <circle cx="35" cy="280" r="30" fill="rgba(224,185,74,0.12)" />
+              </svg>
+            </div>
           </div>
         </div>
       </section>
@@ -225,27 +245,29 @@ export function Landing() {
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-pine-600">About</p>
             <h2 className="text-2xl md:text-3xl font-extrabold text-pine-800 mt-2 mb-4">
-              Pine Truist Finance Bank is built around trust.
+              Banking you can trust
             </h2>
-            <p className="text-slate-600">
-              We combine modern account opening with rigorous identity, audit, and transaction
-              controls so customers can bank confidently from any device.
+            <p className="text-slate-600 leading-relaxed">
+              Pine Truist Finance Bank combines cutting-edge technology with rigorous security standards. 
+              Every account is protected by multi-layered authentication, real-time fraud monitoring, and 
+              encrypted data storage. We&apos;re committed to providing transparent, accessible banking 
+              services that put your financial security first.
             </p>
           </div>
           <div className="space-y-5 text-left max-w-md mx-auto">
             <div className="flex items-center gap-3">
               <GreenCheckIcon className="w-7 h-7 flex-shrink-0" />
               <span className="text-pine-800 text-lg font-medium">
-                Low Fees &amp; High Interest
+                FDIC Insured Accounts
               </span>
             </div>
             <div className="flex items-center gap-3">
               <GreenCheckIcon className="w-7 h-7 flex-shrink-0" />
-              <span className="text-pine-800 text-lg font-medium">Fast &amp; Reliable</span>
+              <span className="text-pine-800 text-lg font-medium">Bank-Grade Security</span>
             </div>
             <div className="flex items-center gap-3">
               <GreenCheckIcon className="w-7 h-7 flex-shrink-0" />
-              <span className="text-pine-800 text-lg font-medium">Trusted &amp; Secure</span>
+              <span className="text-pine-800 text-lg font-medium">24/7 Account Access</span>
             </div>
           </div>
         </div>
@@ -256,7 +278,7 @@ export function Landing() {
           <div className="text-center mb-8">
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-pine-600">Help</p>
             <h2 className="text-2xl md:text-3xl font-extrabold text-pine-900 mt-2">
-              Support for every banking moment
+              Your security is our priority
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
