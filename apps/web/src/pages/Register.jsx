@@ -49,15 +49,15 @@ function PasswordStrength({ password }) {
           {!checks.lower && <span>Lowercase</span>}
           {!checks.digit && <span>Digit</span>}
           {!checks.symbol && <span>Symbol</span>}
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
 
 function StepIndicator({ current, total }) {
   return (
-    <div className="flex items-center justify-center mb-8 gap-2">
+    <div className="mb-8 flex items-center justify-center gap-2 rounded-3xl bg-pine-50/80 p-3">
       {Array.from({ length: total }, (_, i) => {
         const s = i + 1;
         const done = s < current;
@@ -67,17 +67,17 @@ function StepIndicator({ current, total }) {
             <div
               className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold border-2 transition-all ${
                 done
-                  ? 'bg-pine-700 border-pine-700 text-white'
+                  ? 'border-pine-700 bg-pine-700 text-white shadow-lg shadow-pine-900/20'
                   : active
-                    ? 'bg-white border-pine-700 text-pine-700'
-                    : 'bg-white border-pine-200 text-pine-400'
+                    ? 'border-gold-400 bg-white text-pine-800 shadow-sm'
+                    : 'border-pine-100 bg-white text-pine-300'
               }`}
             >
               {done ? '✓' : s}
             </div>
             {s < total && (
               <div
-                className={`h-0.5 w-12 sm:w-20 mx-1 transition-colors ${done ? 'bg-pine-700' : 'bg-pine-100'}`}
+                className={`mx-1 h-0.5 w-12 rounded-full transition-colors sm:w-20 ${done ? 'bg-pine-700' : 'bg-pine-100'}`}
               />
             )}
           </div>
@@ -221,24 +221,32 @@ export function Register() {
   const ssnDisplay = !ssnFocused && form.ssn.length >= 5 ? `•••-••-${form.ssn.slice(5)}` : form.ssn;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_rgba(224,185,74,0.24),_transparent_28%),linear-gradient(135deg,_#07111f_0%,_#10243c_50%,_#123524_100%)] flex flex-col">
+    <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_18%_12%,_rgba(98,175,116,0.24),_transparent_30%),radial-gradient(circle_at_90%_8%,_rgba(224,185,74,0.24),_transparent_28%),linear-gradient(135deg,_#06111d_0%,_#10243c_48%,_#123524_100%)] text-white">
       {/* Header */}
-      <header className="px-6 py-5">
-        <Link to="/">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+        <Link to="/" aria-label="Pine Truist home">
           <BrandLogo variant="dark" />
+        </Link>
+        <Link
+          to="/login"
+          className="hidden rounded-full border border-white/20 px-4 py-2 text-sm font-bold text-white/90 transition hover:bg-white/10 sm:inline-flex"
+        >
+          Sign in
         </Link>
       </header>
 
       {/* Main */}
-      <div className="flex-1 grid xl:grid-cols-[0.85fr_1.15fr] items-center gap-8 px-4 pb-12 mx-auto max-w-6xl w-full">
-        <div className="hidden xl:block text-white">
-          <p className="inline-flex rounded-full border border-gold-400/40 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-gold-400 mb-5">
+      <main className="mx-auto grid min-h-[calc(100vh-96px)] w-full max-w-6xl items-center gap-10 px-4 pb-12 xl:grid-cols-[0.85fr_1.15fr]">
+        <aside className="relative hidden xl:block">
+          <div className="absolute -left-14 top-10 h-44 w-44 rounded-full bg-pine-400/20 blur-3xl" />
+          <div className="glass-panel relative p-8 text-white">
+          <p className="eyebrow mb-5">
             Account Application
           </p>
-          <h2 className="text-4xl font-extrabold leading-tight mb-4">
+          <h2 className="mb-4 text-5xl font-black leading-tight tracking-tight">
             Open your account in minutes
           </h2>
-          <p className="text-slate-200 leading-relaxed">
+          <p className="text-lg leading-8 text-slate-200">
             Our secure application process collects the information required for identity
             verification and regulatory compliance. Your personal data is encrypted end-to-end and
             protected by bank-grade security throughout the application process.
@@ -246,17 +254,24 @@ export function Register() {
           <div className="mt-8 space-y-3">
             {['Identity Verification', 'Encrypted Data Storage', 'Instant Account Activation'].map(
               (item) => (
-                <div key={item} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
+                <div
+                  key={item}
+                  className="rounded-3xl border border-white/10 bg-white/10 p-4 font-bold ring-1 ring-white/10"
+                >
                   {item}
                 </div>
               ),
             )}
           </div>
-        </div>
-        <div className="w-full max-w-2xl bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mx-auto ring-1 ring-white/40">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold text-pine-900">Account Application</h1>
-            <p className="text-sm text-gray-500 mt-1">
+          </div>
+        </aside>
+        <section className="card mx-auto w-full max-w-2xl p-6 sm:p-8">
+          <div className="mb-6">
+            <p className="text-sm font-black uppercase tracking-[0.22em] text-pine-600">
+              Account application
+            </p>
+            <h1 className="mt-2 text-3xl font-black text-pine-950">Open your Pine Truist account</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
               Step {step} of 4 — {STEP_LABELS[step - 1]} Information
             </p>
           </div>
@@ -266,7 +281,7 @@ export function Register() {
           {/* ── STEP 1: Personal Info ─────────────────────── */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="font-semibold text-pine-900">Personal information</h2>
+              <h2 className="text-lg font-black text-pine-950">Personal information</h2>
               <p className="text-sm text-gray-600">
                 Please provide your legal information as it appears on government-issued
                 identification.
@@ -444,7 +459,7 @@ export function Register() {
           {/* ── STEP 2: Security ─────────────────────────── */}
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="font-semibold text-pine-900">Account security</h2>
+              <h2 className="text-lg font-black text-pine-950">Account security</h2>
               <p className="text-sm text-gray-600">
                 Set up your password and security question to protect your account.
               </p>
@@ -520,7 +535,7 @@ export function Register() {
           {/* ── STEP 3: Account Type ─────────────────────── */}
           {step === 3 && (
             <div className="space-y-4">
-              <h2 className="font-semibold text-pine-900">Select account type</h2>
+              <h2 className="text-lg font-black text-pine-950">Select account type</h2>
               <p className="text-sm text-gray-600">
                 Choose the account that best fits your financial needs.
               </p>
@@ -554,8 +569,8 @@ export function Register() {
                     onClick={() => upd('accountType', type)}
                     className={`text-left p-4 rounded-2xl border-2 transition-all ${
                       form.accountType === type
-                        ? 'border-pine-700 bg-pine-50 shadow-sm'
-                        : 'border-pine-100 bg-white hover:border-pine-300'
+                        ? 'border-pine-700 bg-pine-50 shadow-lg shadow-pine-900/10'
+                        : 'border-pine-100 bg-white hover:-translate-y-0.5 hover:border-pine-300 hover:shadow-md'
                     }`}
                   >
                     <svg
@@ -580,11 +595,11 @@ export function Register() {
           {/* ── STEP 4: Review ───────────────────────────── */}
           {step === 4 && (
             <div className="space-y-4">
-              <h2 className="font-semibold text-pine-900">Review and submit</h2>
+              <h2 className="text-lg font-black text-pine-950">Review and submit</h2>
               <p className="text-sm text-gray-600">
                 Please review your information before submitting your application.
               </p>
-              <dl className="bg-pine-50 rounded-xl ring-1 ring-pine-100 p-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-3xl bg-pine-50 p-4 text-sm ring-1 ring-pine-100">
                 {[
                   ['Full name', form.fullName],
                   ['Date of birth', form.dateOfBirth],
@@ -614,7 +629,7 @@ export function Register() {
                 ))}
               </dl>
 
-              <div className="p-4 bg-amber-50 ring-1 ring-amber-200 rounded-xl text-sm text-amber-900">
+              <div className="rounded-3xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200">
                 <p className="font-semibold mb-1">Important Disclosures</p>
                 <p>
                   By submitting this application, you agree to Pine Truist Finance Bank&apos;s{' '}
@@ -656,7 +671,7 @@ export function Register() {
           )}
 
           {/* Navigation */}
-          <div className="flex justify-between mt-8 gap-4">
+          <div className="mt-8 flex justify-between gap-4 border-t border-pine-100 pt-6">
             {step > 1 ? (
               <button type="button" className="btn-secondary flex-1" onClick={back} disabled={busy}>
                 ← Back
@@ -681,8 +696,8 @@ export function Register() {
               </button>
             )}
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
