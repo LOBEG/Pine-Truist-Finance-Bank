@@ -3,6 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../store/auth.js';
 import { BrandLogo } from '../components/Brand.jsx';
 
+const trustItems = ['Encrypted sessions', 'MFA ready', 'Fraud monitored'];
+
 export function Login() {
   const { login } = useAuth();
   const nav = useNavigate();
@@ -42,59 +44,72 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(58,143,92,0.35),_transparent_32%),linear-gradient(135deg,_#07111f_0%,_#10243c_52%,_#123524_100%)] flex flex-col">
-      {/* Header */}
-      <header className="px-6 py-5">
-        <Link to="/">
+    <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_15%_15%,_rgba(224,185,74,0.20),_transparent_28%),radial-gradient(circle_at_85%_10%,_rgba(98,175,116,0.28),_transparent_30%),linear-gradient(135deg,_#06111d_0%,_#0f2b2c_48%,_#123524_100%)] text-white">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+        <Link to="/" aria-label="Pine Truist home">
           <BrandLogo variant="dark" />
+        </Link>
+        <Link to="/register" className="hidden rounded-full border border-white/20 px-4 py-2 text-sm font-bold text-white/90 transition hover:bg-white/10 sm:inline-flex">
+          Open account
         </Link>
       </header>
 
-      {/* Main */}
-      <div className="flex-1 grid lg:grid-cols-2 items-center gap-10 px-4 pb-12 mx-auto max-w-6xl w-full">
-        <div className="hidden lg:block text-white">
-          <p className="inline-flex rounded-full border border-gold-400/40 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.25em] text-gold-400 mb-5">
-            Secure Login
-          </p>
-          <h2 className="text-4xl font-extrabold leading-tight mb-4">
-            Access your account with confidence
-          </h2>
-          <p className="text-slate-200 max-w-lg leading-relaxed">
-            Your Pine Truist account is protected by industry-leading security measures including
-            encrypted connections, multi-factor authentication, and continuous fraud monitoring.
-            Every login is verified to ensure your financial information stays safe.
-          </p>
-          <div className="mt-8 grid grid-cols-3 gap-3 max-w-lg text-center">
-            {['256-bit Encryption', 'Fraud Detection', 'Session Security'].map((item) => (
-              <div key={item} className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
-                <span className="text-sm font-bold">{item}</span>
+      <main className="mx-auto grid min-h-[calc(100vh-96px)] w-full max-w-6xl items-center gap-10 px-4 pb-12 lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative hidden lg:block">
+          <div className="absolute -left-16 top-10 h-44 w-44 rounded-full bg-pine-400/20 blur-3xl" />
+          <div className="glass-panel relative p-8">
+            <span className="eyebrow">Secure access</span>
+            <h1 className="mt-6 max-w-xl text-5xl font-black leading-tight tracking-tight">
+              Sign in to banking that keeps pace with you.
+            </h1>
+            <p className="mt-5 max-w-lg text-lg leading-8 text-slate-200">
+              Manage balances, transfers, cards, and alerts from a calm workspace protected by strong authentication and real-time monitoring.
+            </p>
+            <div className="mt-8 grid grid-cols-3 gap-3">
+              {trustItems.map((item) => (
+                <div key={item} className="rounded-3xl border border-white/10 bg-white/10 p-4 text-sm font-bold text-white shadow-lg shadow-slate-950/10">
+                  {item}
+                </div>
+              ))}
+            </div>
+            <div className="mt-10 rounded-[1.75rem] border border-white/10 bg-slate-950/30 p-5">
+              <div className="flex items-center justify-between text-sm text-slate-300">
+                <span>Account security</span>
+                <span className="rounded-full bg-pine-400/20 px-3 py-1 text-pine-100">Active</span>
               </div>
-            ))}
+              <div className="mt-4 space-y-3">
+                {['Device verification', 'Session encryption', 'Fraud signal review'].map((item) => (
+                  <div key={item} className="flex items-center gap-3 text-sm text-slate-100">
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-pine-400/20 text-pine-100">✓</span>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="w-full max-w-md bg-white/95 backdrop-blur rounded-2xl shadow-2xl p-8 mx-auto ring-1 ring-white/40">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-pine-900">Sign In</h1>
-            <p className="text-sm text-gray-500 mt-1">Access your Pine Truist account securely</p>
+        </section>
+
+        <section className="card mx-auto w-full max-w-md p-7 sm:p-8">
+          <div className="mb-7">
+            <p className="text-sm font-bold uppercase tracking-[0.22em] text-pine-600">Welcome back</p>
+            <h2 className="mt-2 text-3xl font-black text-pine-950">Secure sign in</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">Use your Pine Truist username to continue to your dashboard.</p>
           </div>
 
           {registered && (
-            <div className="mb-4 text-sm text-pine-800 bg-pine-50 ring-1 ring-pine-200 rounded-lg p-3">
-              ✓ Account created successfully! Please sign in to continue.
+            <div className="mb-4 rounded-2xl border border-pine-200 bg-pine-50 p-3 text-sm font-medium text-pine-800">
+              ✓ Account created successfully. Please sign in to continue.
             </div>
           )}
 
           <form onSubmit={onSubmit} className="space-y-5">
             <div>
-              <label
-                className="block text-sm font-medium text-gray-700 mb-1"
-                htmlFor="login-username"
-              >
+              <label className="label" htmlFor="login-username">
                 Username
               </label>
               <input
                 id="login-username"
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-pine-600 focus:ring-2 focus:ring-pine-100"
+                className="input"
                 type="text"
                 required
                 autoFocus
@@ -105,17 +120,17 @@ export function Login() {
               />
             </div>
             <div>
-              <div className="flex items-baseline justify-between mb-1">
-                <label className="block text-sm font-medium text-gray-700" htmlFor="login-password">
+              <div className="mb-1.5 flex items-baseline justify-between">
+                <label className="label mb-0" htmlFor="login-password">
                   Password
                 </label>
-                <Link to="#" className="text-xs text-pine-600 hover:text-pine-800">
+                <Link to="#" className="text-xs font-bold text-pine-700 hover:text-pine-900">
                   Forgot password?
                 </Link>
               </div>
               <input
                 id="login-password"
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-pine-600 focus:ring-2 focus:ring-pine-100"
+                className="input"
                 type="password"
                 required
                 autoComplete="current-password"
@@ -124,40 +139,36 @@ export function Login() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-2xl bg-pine-50 px-3 py-2">
               <input
                 id="remember"
                 type="checkbox"
-                className="rounded border-gray-300 text-pine-700 focus:ring-pine-500"
+                className="rounded border-pine-300 text-pine-700 focus:ring-pine-500"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
               />
-              <label htmlFor="remember" className="text-sm text-gray-600 cursor-pointer">
+              <label htmlFor="remember" className="cursor-pointer text-sm font-medium text-pine-800">
                 Remember this device
               </label>
             </div>
             {error && (
-              <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg p-3">
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {error}
               </div>
             )}
-            <button
-              className="w-full bg-[#3a8f5c] hover:bg-[#2f7a4d] text-white font-bold py-3 rounded-lg text-sm transition"
-              type="submit"
-              disabled={busy}
-            >
-              {busy ? 'Signing in…' : 'Sign In'}
+            <button className="btn-primary w-full" type="submit" disabled={busy}>
+              {busy ? 'Signing in…' : 'Sign in securely'}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <span>Don&apos;t have an account? </span>
-            <Link className="text-pine-700 font-semibold hover:text-pine-900" to="/register">
-              Open an Account
+          <div className="mt-7 rounded-2xl bg-slate-50 p-4 text-center text-sm text-slate-600">
+            <span>New to Pine Truist? </span>
+            <Link className="font-extrabold text-pine-700 hover:text-pine-900" to="/register">
+              Open an account
             </Link>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

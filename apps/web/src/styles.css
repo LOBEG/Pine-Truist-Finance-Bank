@@ -3,30 +3,77 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: light;
+    background: #f4f8f5;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
+    min-height: 100vh;
+    margin: 0;
+    background:
+      radial-gradient(circle at top left, rgba(63, 150, 87, 0.18), transparent 32rem),
+      linear-gradient(180deg, #f8fbf8 0%, #eef6f0 46%, #f8fafc 100%);
+    color: #143524;
     font-family: Inter, system-ui, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    @apply bg-pine-700 text-white;
+  }
+
+  a,
+  button,
+  input,
+  select {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl shadow-sm ring-1 ring-pine-100 p-6;
+    @apply rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_24px_70px_rgba(20,53,36,0.10)] ring-1 ring-pine-100/70 backdrop-blur;
   }
+
+  .glass-panel {
+    @apply rounded-[2rem] border border-white/20 bg-white/10 shadow-2xl shadow-slate-950/20 backdrop-blur-xl;
+  }
+
+  .eyebrow {
+    @apply inline-flex rounded-full border border-gold-400/40 bg-gold-400/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.24em] text-gold-400;
+  }
+
   .btn {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium transition;
+    @apply inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-bold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50;
   }
+
   .btn-primary {
-    @apply btn bg-pine-700 text-white hover:bg-pine-800 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply btn bg-pine-700 text-white shadow-lg shadow-pine-900/20 hover:-translate-y-0.5 hover:bg-pine-800;
   }
+
   .btn-secondary {
-    @apply btn bg-white text-pine-800 ring-1 ring-pine-200 hover:bg-pine-50;
+    @apply btn border border-pine-200 bg-white text-pine-800 shadow-sm hover:-translate-y-0.5 hover:border-pine-300 hover:bg-pine-50;
   }
+
+  .btn-ghost {
+    @apply btn border border-white/20 bg-white/10 text-white hover:-translate-y-0.5 hover:bg-white/20;
+  }
+
   .input {
-    @apply w-full rounded-lg border border-pine-200 bg-white px-3 py-2 outline-none focus:border-pine-500 focus:ring-2 focus:ring-pine-200;
+    @apply w-full rounded-2xl border border-pine-100 bg-white/90 px-4 py-3 text-sm text-pine-950 shadow-inner shadow-pine-900/5 outline-none transition placeholder:text-slate-400 focus:border-pine-500 focus:bg-white focus:ring-4 focus:ring-pine-100;
   }
+
   .label {
-    @apply block text-sm font-medium text-pine-900 mb-1;
+    @apply mb-1.5 block text-sm font-bold text-pine-900;
   }
+
   .badge {
     @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
   }
