@@ -131,6 +131,14 @@ export function loadConfig({ serviceName, extraSchema = {} }) {
       },
       runHistoricalSeed: { format: Boolean, default: false, env: 'RUN_HISTORICAL_SEED' },
     },
+    migrations: {
+      runOnStartup: {
+        doc: 'Apply pending DB migrations automatically at service startup (advisory-locked).',
+        format: Boolean,
+        default: false,
+        env: 'RUN_MIGRATIONS_ON_STARTUP',
+      },
+    },
     ...extraSchema,
   };
 

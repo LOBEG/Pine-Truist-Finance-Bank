@@ -16,6 +16,7 @@ import { inputSanitizer } from '@pine/lib-http/sanitize';
 import { createJwtSigner, createJwtVerifier, requireAuth } from '@pine/lib-auth/jwt';
 import { createPublisher } from '@pine/lib-events';
 import { startOutboxRelay, initQueue, shutdownQueue } from '@pine/lib-queue';
+import { runMigrations, assertSchemaReady } from '../../../db/migrate.js';
 
 import { SessionService } from './services/session.js';
 import { bootstrapAdmin } from './services/adminBootstrap.js';
@@ -48,6 +49,31 @@ const pool = createPool({
   poolMax: config.database.poolMax,
 });
 logger.info({ poolMax: config.database.poolMax }, 'db pool initialized');
+
+// Schema readiness: either apply pending migrations automatically (serialised
+// across replicas via a Postgres advisory lock) or fail fast with a clear
+// message. This prevents a missing-migration deploy from silently degrading
+// into opaque HTTP 500s ("relation \"users\" does not exist") on every request.
+if (config.migrations.runOnStartup) {
+  try {
+    const { applied, files } = await runMigrations({ logger });
+    logger.info(
+      { applied, files },
+      applied > 0 ? 'startup migrations applied' : 'database schema already up to date',
+    );
+  } catch (migrateErr) {
+    logger.fatal({ err: migrateErr.message }, 'startup migrations failed - exiting');
+    process.exit(1);
+  }
+} else {
+  try {
+    await assertSchemaReady();
+    logger.info('database schema verified');
+  } catch (schemaErr) {
+    logger.fatal({ err: schemaErr.message }, 'database schema not ready - exiting');
+    process.exit(1);
+  }
+}
 
 // Initialize pg-boss queue (Postgres-native, no Redis required)
 await initQueue(config.database.url);

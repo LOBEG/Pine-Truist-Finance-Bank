@@ -34,6 +34,13 @@ which gates startup of every other service. The CLI is idempotent:
 DATABASE_URL=... DATABASE_SSL=require npm run migrate
 ```
 
+If you cannot configure a release/pre-deploy command, set
+`RUN_MIGRATIONS_ON_STARTUP=true` on `core-banking-api`. The service will then
+apply pending migrations at boot, serialised across replicas via a Postgres
+advisory lock. When this flag is unset (default), the service instead verifies
+the schema is ready and exits with a clear error (rather than serving HTTP 500s)
+if migrations have not been applied.
+
 ## Bootstrap super_admin (Automatic)
 
 The admin bootstrap runs automatically at server startup when enabled:
