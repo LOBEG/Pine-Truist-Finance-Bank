@@ -194,7 +194,7 @@ export async function bootstrapAdmin({ logger }) {
       );
 
       logger.info(
-        { userId, username, email: email.replace(/@.*/, '@***') },
+        { userId, email: email.replace(/@.*/, '@***') },
         'admin bootstrap: super_admin user created successfully',
       );
 
