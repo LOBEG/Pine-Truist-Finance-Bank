@@ -309,6 +309,15 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
         next.userId,
       ]);
       const u = rows[0];
+      // The session was valid but the underlying user no longer exists (e.g.
+      // deleted between issuance and refresh). Revoke the family and reject
+      // instead of dereferencing undefined, which would surface as a 500.
+      if (!u) {
+        await sessions
+          .revoke({ refreshToken: next.refreshToken, reason: 'user_missing' })
+          .catch(() => {});
+        throw errors.unauthorized('invalid_refresh', 'Invalid refresh token.');
+      }
       const accessToken = signAccess(
         { email: u.email, roles, permissions, sid: next.sessionId, mfa: !!u.mfa_enabled },
         { subject: next.userId },
