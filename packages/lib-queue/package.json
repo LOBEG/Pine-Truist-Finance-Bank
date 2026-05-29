@@ -1,0 +1,15 @@
+{
+  "name": "@pine/lib-queue",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "description": "Postgres-native job queue (no Redis required)",
+  "dependencies": {
+    "pg-boss": "^10.1.5",
+    "@pine/lib-db": "*"
+  }
+}

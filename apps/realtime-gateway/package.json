@@ -1,0 +1,21 @@
+{
+  "name": "@pine/realtime-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "socket.io": "^4.8.0",
+    "@socket.io/postgres-adapter": "^0.5.0",
+    "@pine/lib-config": "*",
+    "@pine/lib-logger": "*",
+    "@pine/lib-auth": "*",
+    "@pine/lib-events": "*",
+    "@pine/lib-http": "*",
+    "@pine/lib-db": "*"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@pine/notification-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/worker.js",
+  "scripts": {
+    "start": "node src/worker.js"
+  },
+  "dependencies": {
+    "@pine/lib-config": "*",
+    "@pine/lib-logger": "*",
+    "@pine/lib-db": "*",
+    "@pine/lib-queue": "*",
+    "@pine/lib-events": "*"
+  },
+  "optionalDependencies": {
+    "@postmarkapp/postmark": "^4.0.5",
+    "twilio": "^5.4.0"
+  }
+}

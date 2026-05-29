@@ -1,0 +1,212 @@
+openapi: 3.1.0
+info:
+  title: Pine Bank API
+  version: 1.0.0
+  description: |
+    Customer and admin REST API for Pine Bank. JSON, RFC 7807 errors.
+    Money-movement endpoints require an `Idempotency-Key` header.
+
+servers:
+  - url: https://api.pinebank.com/api/v1
+    description: Production
+  - url: https://api-staging.pinebank.com/api/v1
+    description: Staging
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      schema: { type: string, maxLength: 80 }
+      required: true
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code: { type: string }
+        detail: {}
+        traceId: { type: string }
+    Account:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type:
+          type: string
+          enum: [checking, savings, money_market, cd, investment]
+        nickname: { type: string }
+        mask: { type: string, pattern: '^\d{4}$' }
+        routingNumber: { type: string, pattern: '^\d{9}$' }
+        currency: { type: string, default: USD }
+        status: { type: string, enum: [active, frozen, closed] }
+        balances:
+          type: object
+          properties:
+            available_balance: { type: string }
+            ledger_balance: { type: string }
+            pending_debits: { type: string }
+            pending_credits: { type: string }
+    Transaction:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type:
+          type: string
+          enum:
+            - deposit
+            - withdrawal
+            - internal_transfer
+            - ach_credit
+            - ach_debit
+            - wire_domestic
+            - fee
+            - interest
+            - reversal
+            - adjustment
+        status:
+          type: string
+          enum: [pending, authorized, posted, settled, failed, reversed, pending_review, cancelled]
+        amount: { type: string }
+        currency: { type: string }
+        sourceAccountId: { type: string, format: uuid, nullable: true }
+        destinationAccountId: { type: string, format: uuid, nullable: true }
+        description: { type: string }
+        memo: { type: string }
+        createdAt: { type: string, format: date-time }
+        postedAt: { type: string, format: date-time, nullable: true }
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new customer
+      security: []
+      responses:
+        '201': { description: created }
+        '409': { $ref: '#/components/schemas/Problem' }
+  /auth/login:
+    post:
+      summary: Issue access + refresh tokens
+      security: []
+      responses:
+        '200': { description: ok }
+        '401': { description: invalid credentials or MFA required }
+        '429': { description: rate limited / account locked }
+  /auth/refresh:
+    post:
+      summary: Rotate refresh token (reuse detection)
+      security: []
+  /auth/logout:
+    post:
+      summary: Revoke session
+      security: []
+  /auth/mfa/enroll:
+    post: { summary: Begin TOTP enrolment }
+  /auth/mfa/verify:
+    post: { summary: Confirm TOTP and enable MFA }
+
+  /accounts:
+    get: { summary: List accounts (current user) }
+  /accounts/{id}:
+    get: { summary: Account detail with computed balances }
+  /accounts/{id}/balance:
+    get: { summary: Compute live balance via SQL function }
+
+  /transactions:
+    get: { summary: List transactions (cursor pagination) }
+  /transactions/{id}:
+    get: { summary: Transaction detail (filtered to owner) }
+
+  /transfers/internal:
+    post:
+      summary: Internal transfer between own accounts (PIN required)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: posted
+        '400':
+          description: validation error or invalid PIN
+        '409':
+          description: insufficient funds / account inactive
+  /transfers/ach:
+    post:
+      summary: Outbound ACH transfer
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+  /transfers/wire/domestic:
+    post:
+      summary: Domestic wire (Fedwire)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+
+  /counterparties:
+    get: { summary: List linked external accounts }
+    post: { summary: Add a counterparty (microdeposit verification optional) }
+  /counterparties/{id}:
+    delete: { summary: Soft-delete a counterparty }
+
+  /withdrawals:
+    get: { summary: List withdrawal requests (own) }
+    post:
+      summary: Request a withdrawal (places a hold)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+  /withdrawals/{id}:
+    get: { summary: Withdrawal request detail }
+
+  /pins/active:
+    get: { summary: List active admin-issued PINs metadata (PIN itself never returned) }
+
+  # ---------------- Admin ----------------
+
+  /admin/users:
+    get: { summary: List users with roles }
+  /admin/users/{id}:
+    get: { summary: User detail incl. accounts and balances }
+    patch: { summary: Update KYC / freeze status }
+  /admin/users/{id}/pins:
+    post:
+      summary: Issue a single-use 6-digit transfer PIN (plaintext returned ONCE)
+  /admin/users/{id}/pins/{pinId}/revoke:
+    post: { summary: Revoke active PIN }
+
+  /admin/withdrawals:
+    get: { summary: List withdrawals (default pending) }
+  /admin/withdrawals/{id}/approve:
+    post:
+      summary: Approve withdrawal (releases hold + posts disbursement)
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+  /admin/withdrawals/{id}/reject:
+    post: { summary: Reject withdrawal and release hold }
+
+  /admin/transactions/flagged:
+    get: { summary: List fraud-flagged / pending_review transactions }
+  /admin/transactions/{id}/release:
+    post: { summary: Release a flagged transaction }
+  /admin/transactions/{id}/reverse:
+    post: { summary: Reverse a posted transaction }
+
+  /admin/compliance/cases:
+    get: { summary: List compliance cases }
+    post: { summary: Open a compliance case (KYC/AML/SAR/CTR) }
+  /admin/compliance/cases/{id}:
+    patch: { summary: Update case status / assign / add notes }
+
+  /admin/audit:
+    get: { summary: Query audit log with filters (actor, resource, action, dates) }
+
+  /admin/settings:
+    get: { summary: List system settings }
+  /admin/settings/{key}:
+    patch: { summary: Update a setting (audited) }

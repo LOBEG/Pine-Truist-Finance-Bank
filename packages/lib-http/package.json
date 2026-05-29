@@ -1,0 +1,16 @@
+{
+  "name": "@pine/lib-http",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./csrf": "./src/csrf.js",
+    "./sanitize": "./src/sanitize.js"
+  },
+  "dependencies": {
+    "helmet": "^8.0.0",
+    "cors": "^2.8.5"
+  }
+}

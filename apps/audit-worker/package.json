@@ -1,0 +1,16 @@
+{
+  "name": "@pine/audit-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/worker.js",
+  "scripts": {
+    "start": "node src/worker.js"
+  },
+  "dependencies": {
+    "@pine/lib-config": "*",
+    "@pine/lib-logger": "*",
+    "@pine/lib-db": "*",
+    "@pine/lib-events": "*"
+  }
+}

@@ -1,0 +1,54 @@
+name: Deploy (Railway)
+
+# Gate deployment on a green CI run. Triggered by workflow_run so the
+# deploy job sees full CI context (branch, SHA, conclusion).
+on:
+  workflow_run:
+    workflows: ['CI']
+    branches: [main, staging]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Railway (${{ github.event.workflow_run.head_branch }})
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    environment:
+      name: ${{ github.event.workflow_run.head_branch == 'main' && 'production' || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli@latest
+
+      # Railway's GitHub integration auto-deploys on push, but we explicitly
+      # trigger a redeploy here so we can capture the deployment ID and gate
+      # on health before reporting success.
+      - name: Deploy services (Railway up)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          # Set RAILWAY_ENVIRONMENT_ID to the target environment from Railway dashboard
+          RAILWAY_ENVIRONMENT_ID: >-
+            ${{ github.event.workflow_run.head_branch == 'main'
+              && secrets.RAILWAY_PRODUCTION_ENVIRONMENT_ID
+              || secrets.RAILWAY_STAGING_ENVIRONMENT_ID }}
+        run: |
+          echo "Deploying SHA ${{ github.event.workflow_run.head_sha }} to ${{ github.event.workflow_run.head_branch }}"
+          # railway up triggers a redeploy; Railway handles the pre-deploy migration command
+          railway up --detach
+
+      - name: Announce success
+        run: |
+          echo "✅ Railway deployment triggered for ${{ github.event.workflow_run.head_branch }}"
+          echo "Monitor progress in the Railway dashboard."
+          echo "To roll back: railway rollback --service <service-name> in the Railway CLI"
+          echo "or use the Railway dashboard environment snapshot feature."

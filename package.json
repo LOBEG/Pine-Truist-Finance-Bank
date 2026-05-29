@@ -1,0 +1,42 @@
+{
+  "name": "pine-bank",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pine Bank — production-grade online banking infrastructure (Railway.app)",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.11.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test --test-reporter=spec 'tests/unit/**/*.test.js'",
+    "migrate": "node db/cli.js migrate",
+    "migrate:deploy": "node db/cli.js migrate",
+    "migrate:status": "node db/cli.js status",
+    "seed": "node db/cli.js seed",
+    "create-admin": "node scripts/create-admin.js",
+    "rotate-keys": "node scripts/rotate-keys.js",
+    "reconcile-ledger": "node scripts/reconcile-ledger.js",
+    "dev:api": "node apps/core-banking-api/src/server.js",
+    "dev:gateway": "node apps/api-gateway/src/server.js",
+    "dev:admin": "node apps/admin-api/src/server.js",
+    "dev:realtime": "node apps/realtime-gateway/src/server.js",
+    "dev:web": "npm --workspace apps/web run dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "eslint": "^9.13.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "globals": "^15.11.0",
+    "prettier": "^3.3.3"
+  }
+}

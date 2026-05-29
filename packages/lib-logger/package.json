@@ -1,0 +1,15 @@
+{
+  "name": "@pine/lib-logger",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "dependencies": {
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "nanoid": "^5.0.7"
+  }
+}

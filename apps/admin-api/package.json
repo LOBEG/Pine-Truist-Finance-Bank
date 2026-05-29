@@ -1,0 +1,25 @@
+{
+  "name": "@pine/admin-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "rate-limiter-flexible": "^5.0.3",
+    "zod": "^3.23.8",
+    "@pine/lib-config": "*",
+    "@pine/lib-logger": "*",
+    "@pine/lib-http": "*",
+    "@pine/lib-db": "*",
+    "@pine/lib-crypto": "*",
+    "@pine/lib-auth": "*",
+    "@pine/lib-validation": "*",
+    "@pine/lib-events": "*",
+    "@pine/lib-queue": "*",
+    "@pine/lib-ledger": "*"
+  }
+}
