@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { api, newIdempotencyKey } from '../api/client.js';
-import { accountTitle, formatMoney } from '../api/format.js';
+import { formatMoney } from '../api/format.js';
 import { PinModal } from '../components/PinModal.jsx';
+import { AccountSelect, Alert, AmountInput, Field, SubmitButton } from '../components/ui.jsx';
+import { useMutation } from '../hooks/useMutation.js';
 
 const EMPTY_BENEFICIARY = {
   name: '',
@@ -11,22 +13,20 @@ const EMPTY_BENEFICIARY = {
   address: '',
 };
 
-export function Wire() {
-  const [accounts, setAccounts] = useState([]);
-  const [form, setForm] = useState({
-    sourceAccountId: '',
-    amount: '',
-    reference: '',
-  });
+/**
+ * WirePanel — domestic Fedwire form. Embeddable in the Move Money flow.
+ */
+export function WirePanel({ accounts }) {
+  const [form, setForm] = useState({ sourceAccountId: '', amount: '', reference: '' });
   const [beneficiary, setBeneficiary] = useState(EMPTY_BENEFICIARY);
   const [pinOpen, setPinOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-  const [result, setResult] = useState(null);
-
-  useEffect(() => {
-    api('/accounts').then((a) => setAccounts(a.accounts));
-  }, []);
+  const { run, busy, error, result } = useMutation((body) =>
+    api('/transfers/wire/domestic', {
+      method: 'POST',
+      idempotencyKey: newIdempotencyKey(),
+      body,
+    }),
+  );
 
   function updateForm(k, v) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -37,230 +37,192 @@ export function Wire() {
 
   function handleSubmitRequest(e) {
     e.preventDefault();
-    setError(null);
-    setResult(null);
     setPinOpen(true);
   }
 
   async function handlePinConfirm(pin) {
     setPinOpen(false);
-    setBusy(true);
     try {
-      const r = await api('/transfers/wire/domestic', {
-        method: 'POST',
-        idempotencyKey: newIdempotencyKey(),
-        body: {
-          sourceAccountId: form.sourceAccountId,
-          amount: form.amount,
-          reference: form.reference || undefined,
-          pin,
-          beneficiary: {
-            name: beneficiary.name,
-            bankName: beneficiary.bankName,
-            routingNumber: beneficiary.routingNumber,
-            accountNumber: beneficiary.accountNumber,
-            address: beneficiary.address || undefined,
-          },
+      await run({
+        sourceAccountId: form.sourceAccountId,
+        amount: form.amount,
+        reference: form.reference || undefined,
+        pin,
+        beneficiary: {
+          name: beneficiary.name,
+          bankName: beneficiary.bankName,
+          routingNumber: beneficiary.routingNumber,
+          accountNumber: beneficiary.accountNumber,
+          address: beneficiary.address || undefined,
         },
       });
-      setResult(r);
       setForm((f) => ({ ...f, amount: '', reference: '' }));
       setBeneficiary(EMPTY_BENEFICIARY);
-    } catch (err) {
-      setError(err.detail || err.message);
-    } finally {
-      setBusy(false);
+    } catch {
+      /* error surfaced via useMutation */
     }
   }
 
   const selectedAccount = accounts.find((a) => a.id === form.sourceAccountId);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-pine-900">Domestic wire transfer</h1>
-        <p className="text-pine-700 text-sm mt-1">
-          Send a Fedwire to any US bank account. Same-day settlement for wires submitted before the
-          4 PM ET cutoff.
-        </p>
-      </div>
+    <>
+      <form onSubmit={handleSubmitRequest} className="space-y-6">
+        {/* Source account */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-pine-900">
+            Your account
+          </h2>
+          <Field
+            label="From account"
+            htmlFor="wire-from"
+            hint={
+              selectedAccount
+                ? `Available: ${formatMoney(
+                    selectedAccount.balances.available_balance,
+                  )} · Ledger: ${formatMoney(selectedAccount.balances.ledger_balance)}`
+                : undefined
+            }
+          >
+            <AccountSelect
+              id="wire-from"
+              accounts={accounts}
+              value={form.sourceAccountId}
+              onChange={(v) => updateForm('sourceAccountId', v)}
+            />
+          </Field>
+          <Field
+            label="Amount (USD)"
+            htmlFor="wire-amount"
+            hint="Wires ≥ $25,000 are subject to compliance review before same-day dispatch."
+          >
+            <AmountInput
+              id="wire-amount"
+              value={form.amount}
+              onChange={(v) => updateForm('amount', v)}
+            />
+          </Field>
+          <Field label="Reference / memo (optional)" htmlFor="wire-ref">
+            <input
+              id="wire-ref"
+              className="input"
+              maxLength={140}
+              placeholder="Invoice #, purpose, etc."
+              value={form.reference}
+              onChange={(e) => updateForm('reference', e.target.value)}
+            />
+          </Field>
+        </div>
 
-      <div className="card">
-        <form onSubmit={handleSubmitRequest} className="space-y-6">
-          {/* Source account */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-pine-900 uppercase tracking-wide">
-              Your account
-            </h2>
-            <div>
-              <label className="label">From account</label>
-              <select
-                required
-                className="input"
-                value={form.sourceAccountId}
-                onChange={(e) => updateForm('sourceAccountId', e.target.value)}
-              >
-                <option value="">Select…</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {accountTitle(a.type)} — {a.nickname} ••••{a.mask} —{' '}
-                    {formatMoney(a.balances.available_balance)}
-                  </option>
-                ))}
-              </select>
-              {selectedAccount && (
-                <p className="text-xs text-pine-700 mt-1">
-                  Available: {formatMoney(selectedAccount.balances.available_balance)} · Ledger:{' '}
-                  {formatMoney(selectedAccount.balances.ledger_balance)}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="label">Amount (USD)</label>
+        <hr className="border-pine-100" />
+
+        {/* Beneficiary */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-pine-900">
+            Beneficiary
+          </h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label="Beneficiary full name / company" htmlFor="wire-bname">
               <input
+                id="wire-bname"
                 className="input"
                 required
-                inputMode="decimal"
-                pattern="\d+(\.\d{1,2})?"
-                placeholder="0.00"
-                value={form.amount}
-                onChange={(e) => updateForm('amount', e.target.value)}
-              />
-              <p className="text-xs text-pine-700 mt-1">
-                Wires ≥ $25,000 are subject to compliance review before same-day dispatch.
-              </p>
-            </div>
-            <div>
-              <label className="label">Reference / memo (optional)</label>
-              <input
-                className="input"
                 maxLength={140}
-                placeholder="Invoice #, purpose, etc."
-                value={form.reference}
-                onChange={(e) => updateForm('reference', e.target.value)}
+                value={beneficiary.name}
+                onChange={(e) => updateBeneficiary('name', e.target.value)}
               />
-            </div>
+            </Field>
+            <Field label="Beneficiary address (optional)" htmlFor="wire-baddr">
+              <input
+                id="wire-baddr"
+                className="input"
+                maxLength={200}
+                value={beneficiary.address}
+                onChange={(e) => updateBeneficiary('address', e.target.value)}
+              />
+            </Field>
           </div>
+        </div>
 
-          <hr className="border-pine-100" />
+        <hr className="border-pine-100" />
 
-          {/* Beneficiary */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-pine-900 uppercase tracking-wide">
-              Beneficiary
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Beneficiary full name / company</label>
-                <input
-                  className="input"
-                  required
-                  maxLength={140}
-                  value={beneficiary.name}
-                  onChange={(e) => updateBeneficiary('name', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">Beneficiary address (optional)</label>
-                <input
-                  className="input"
-                  maxLength={200}
-                  value={beneficiary.address}
-                  onChange={(e) => updateBeneficiary('address', e.target.value)}
-                />
-              </div>
-            </div>
+        {/* Receiving bank */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-pine-900">
+            Receiving bank
+          </h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label="Bank name" htmlFor="wire-bankname">
+              <input
+                id="wire-bankname"
+                className="input"
+                required
+                maxLength={100}
+                value={beneficiary.bankName}
+                onChange={(e) => updateBeneficiary('bankName', e.target.value)}
+              />
+            </Field>
+            <Field label="ABA routing number" htmlFor="wire-routing">
+              <input
+                id="wire-routing"
+                className="input"
+                required
+                inputMode="numeric"
+                pattern="[0-9]{9}"
+                maxLength={9}
+                placeholder="9 digits"
+                value={beneficiary.routingNumber}
+                onChange={(e) =>
+                  updateBeneficiary('routingNumber', e.target.value.replace(/\D/g, '').slice(0, 9))
+                }
+              />
+            </Field>
+            <Field
+              label="Beneficiary account number"
+              htmlFor="wire-acct"
+              hint="Account number is encrypted at rest and never displayed again."
+              className="md:col-span-2"
+            >
+              <input
+                id="wire-acct"
+                className="input"
+                required
+                inputMode="numeric"
+                maxLength={20}
+                value={beneficiary.accountNumber}
+                onChange={(e) =>
+                  updateBeneficiary('accountNumber', e.target.value.replace(/\D/g, '').slice(0, 20))
+                }
+              />
+            </Field>
           </div>
+        </div>
 
-          <hr className="border-pine-100" />
-
-          {/* Receiving bank */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-pine-900 uppercase tracking-wide">
-              Receiving bank
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="label">Bank name</label>
-                <input
-                  className="input"
-                  required
-                  maxLength={100}
-                  value={beneficiary.bankName}
-                  onChange={(e) => updateBeneficiary('bankName', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="label">ABA routing number</label>
-                <input
-                  className="input"
-                  required
-                  inputMode="numeric"
-                  pattern="[0-9]{9}"
-                  maxLength={9}
-                  placeholder="9 digits"
-                  value={beneficiary.routingNumber}
-                  onChange={(e) =>
-                    updateBeneficiary(
-                      'routingNumber',
-                      e.target.value.replace(/\D/g, '').slice(0, 9),
-                    )
-                  }
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="label">Beneficiary account number</label>
-                <input
-                  className="input"
-                  required
-                  inputMode="numeric"
-                  maxLength={20}
-                  value={beneficiary.accountNumber}
-                  onChange={(e) =>
-                    updateBeneficiary(
-                      'accountNumber',
-                      e.target.value.replace(/\D/g, '').slice(0, 20),
-                    )
-                  }
-                />
-                <p className="text-xs text-pine-700 mt-1">
-                  Account number is encrypted at rest and never displayed again.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-sm text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg p-3">
-              {error}
-            </div>
-          )}
-          {result && (
-            <div className="text-sm text-pine-800 bg-pine-50 ring-1 ring-pine-200 rounded-lg p-4 space-y-1">
-              <p className="font-semibold">Wire submitted.</p>
-              <p>
-                Status:{' '}
-                <span className="badge bg-pine-100 text-pine-800">
-                  {result.status === 'pending_review' ? 'pending review' : result.status}
-                </span>
+        {error && <Alert tone="error">{error}</Alert>}
+        {result && (
+          <Alert tone="success" title="Wire submitted." className="space-y-1">
+            <p>
+              Status:{' '}
+              <span className="badge bg-pine-100 text-pine-800">
+                {result.status === 'pending_review' ? 'pending review' : result.status}
+              </span>
+            </p>
+            <p>
+              Reference: <span className="font-mono text-xs">{result.transactionId}</span>
+            </p>
+            {result.status === 'pending_review' && (
+              <p className="mt-1 text-xs text-amber-700">
+                This wire exceeds the review threshold and will be processed after compliance
+                review.
               </p>
-              <p>
-                Reference: <span className="font-mono text-xs">{result.transactionId}</span>
-              </p>
-              {result.status === 'pending_review' && (
-                <p className="text-amber-700 text-xs mt-1">
-                  This wire exceeds the review threshold and will be processed after compliance
-                  review.
-                </p>
-              )}
-            </div>
-          )}
+            )}
+          </Alert>
+        )}
 
-          <button className="btn-primary w-full" type="submit" disabled={busy}>
-            {busy ? 'Submitting…' : 'Review and send wire'}
-          </button>
-        </form>
-      </div>
+        <SubmitButton busy={busy} className="w-full">
+          Review and send wire
+        </SubmitButton>
+      </form>
 
       <PinModal
         open={pinOpen}
@@ -268,6 +230,6 @@ export function Wire() {
         onConfirm={handlePinConfirm}
         onCancel={() => setPinOpen(false)}
       />
-    </div>
+    </>
   );
 }

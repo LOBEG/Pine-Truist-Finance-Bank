@@ -1,29 +1,17 @@
 import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  Link,
-  useNavigate,
-  useLocation,
-} from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './store/auth.js';
-import { useNotifications } from './store/notifications.js';
-import { useRealtime } from './realtime/socket.js';
 import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { Transactions } from './pages/Transactions.jsx';
-import { Transfer } from './pages/Transfer.jsx';
-import { Wire } from './pages/Wire.jsx';
-import { Deposit } from './pages/Deposit.jsx';
-import { Withdraw } from './pages/Withdraw.jsx';
+import { MoveMoney } from './pages/MoveMoney.jsx';
 import { Notifications } from './pages/Notifications.jsx';
 import { Landing } from './pages/Landing.jsx';
 import { MfaVerify } from './pages/MfaVerify.jsx';
 import { OnboardingComplete } from './pages/OnboardingComplete.jsx';
+import { AppShell } from './components/AppShell.jsx';
 import { BrandLogo } from './components/Brand.jsx';
 import './styles.css';
 
@@ -33,90 +21,13 @@ const INTERNAL_BASE_PATH = import.meta.env.VITE_INTERNAL_BASE_PATH || '/ops';
 // Code-split internal operations dashboard (not shipped with public bundle)
 const OpsConsole = React.lazy(() => import('./internal/OpsConsole.jsx'));
 
-const REALTIME_NOTIF_EVENTS = [
-  'transaction.posted',
-  'transaction.created',
-  'transaction.flagged',
-  'balance.updated',
-  'withdrawal.approved',
-  'withdrawal.rejected',
-];
-
-function CustomerHeader() {
-  const { user, logout } = useAuth();
-  const { unread, push } = useNotifications();
-  const nav = useNavigate();
-
-  const notifHandlers = React.useMemo(
-    () =>
-      REALTIME_NOTIF_EVENTS.reduce((acc, ev) => {
-        acc[ev] = (payload) => push(ev, payload);
-        return acc;
-      }, {}),
-    [push],
-  );
-  useRealtime(notifHandlers);
-
-  if (!user) return null;
-
-  return (
-    <header className="bg-pine-800 text-white">
-      <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <BrandLogo variant="dark" />
-        </Link>
-        <nav className="flex items-center gap-4 text-sm flex-wrap">
-          <Link to="/" className="hover:text-pine-100">
-            Accounts
-          </Link>
-          <Link to="/transactions" className="hover:text-pine-100">
-            Transactions
-          </Link>
-          <Link to="/deposit" className="hover:text-pine-100">
-            Deposit
-          </Link>
-          <Link to="/transfer" className="hover:text-pine-100">
-            Transfer
-          </Link>
-          <Link to="/wire" className="hover:text-pine-100">
-            Wire
-          </Link>
-          <Link to="/withdraw" className="hover:text-pine-100">
-            Withdraw
-          </Link>
-          <Link to="/notifications" className="hover:text-pine-100 relative">
-            Alerts
-            {unread > 0 && (
-              <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold leading-none">
-                {unread > 9 ? '9+' : unread}
-              </span>
-            )}
-          </Link>
-          <button
-            onClick={async () => {
-              await logout();
-              nav('/login');
-            }}
-            className="bg-pine-700 hover:bg-pine-600 rounded-lg px-3 py-1"
-          >
-            Sign out
-          </button>
-        </nav>
-      </div>
-    </header>
-  );
-}
-
-function RequireAuth({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) return <div className="p-10 text-center text-pine-700">Loading…</div>;
-  if (!user) return <Navigate to="/login" replace />;
-  return children;
+function PageLoading() {
+  return <div className="p-10 text-center text-pine-700">Loading…</div>;
 }
 
 function RequireInternalAuth({ children }) {
   const { user, loading, roles = [] } = useAuth();
-  if (loading) return <div className="p-10 text-center text-pine-700">Loading…</div>;
+  if (loading) return <PageLoading />;
   if (!user) return <Navigate to={`${INTERNAL_BASE_PATH}/login`} replace />;
   const isInternal = roles.some((r) =>
     ['admin', 'super_admin', 'compliance_officer', 'auditor', 'support'].includes(r),
@@ -218,98 +129,57 @@ function InternalLoadingFallback() {
   );
 }
 
-/** Root "/" — shows Landing for unauthenticated visitors, Dashboard for logged-in users. */
-function RootRoute() {
+/**
+ * Authenticated customer application. All routes here share the persistent
+ * AppShell (sidebar + topbar with account context). The money-movement routes
+ * all resolve to the unified MoveMoney flow but remain individually
+ * deep-linkable for bookmarks.
+ */
+function CustomerApp() {
   const { user, loading } = useAuth();
-  if (loading) return <div className="p-10 text-center text-pine-700">Loading…</div>;
-  if (!user) return <Landing />;
-  return <Dashboard />;
+  if (loading) return <PageLoading />;
+
+  // Only the marketing landing page is public; every other customer route
+  // requires authentication.
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <AppShell>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/transactions" element={<Transactions />} />
+        <Route path="/move" element={<MoveMoney />} />
+        <Route path="/transfer" element={<MoveMoney />} />
+        <Route path="/wire" element={<MoveMoney />} />
+        <Route path="/deposit" element={<MoveMoney />} />
+        <Route path="/withdraw" element={<MoveMoney />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/onboarding/complete" element={<OnboardingComplete />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppShell>
+  );
 }
 
 /**
  * Customer platform layout.
- * Full-page routes (landing, login, register) skip the constrained <main> wrapper.
- * Authenticated app routes use the CustomerHeader + constrained layout.
+ * Full-page routes (login, register, MFA) render without the app shell.
+ * Everything else is handled by CustomerApp (landing or authenticated shell).
  */
 function CustomerLayout() {
   return (
     <Routes>
-      {/* Full-page routes — own layout, no max-w constraint */}
-      <Route path="/" element={<RootRoute />} />
       <Route path="/login" element={<Login />} />
       <Route path="/login/verify" element={<MfaVerify />} />
       <Route path="/register" element={<Register />} />
-
-      {/* App routes — constrained layout with CustomerHeader */}
-      <Route
-        path="/*"
-        element={
-          <>
-            <CustomerHeader />
-            <main className="mx-auto max-w-6xl px-4 py-8">
-              <Routes>
-                <Route
-                  path="/onboarding/complete"
-                  element={
-                    <RequireAuth>
-                      <OnboardingComplete />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/transactions"
-                  element={
-                    <RequireAuth>
-                      <Transactions />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/transfer"
-                  element={
-                    <RequireAuth>
-                      <Transfer />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/deposit"
-                  element={
-                    <RequireAuth>
-                      <Deposit />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/wire"
-                  element={
-                    <RequireAuth>
-                      <Wire />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/notifications"
-                  element={
-                    <RequireAuth>
-                      <Notifications />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/withdraw"
-                  element={
-                    <RequireAuth>
-                      <Withdraw />
-                    </RequireAuth>
-                  }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-          </>
-        }
-      />
+      <Route path="/*" element={<CustomerApp />} />
     </Routes>
   );
 }
