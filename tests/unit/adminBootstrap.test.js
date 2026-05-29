@@ -86,59 +86,30 @@ describe('Admin Bootstrap Service', () => {
     assert.ok(isValidEmail('admin@sub.example.com'), 'Subdomain should be valid');
   });
 
-  test('password validation enforces minimum length', () => {
-    const isValidPassword = (password) => {
-      if (!password || typeof password !== 'string') return false;
-      if (password.length < 16) return false;
-      const hasUpper = /[A-Z]/.test(password);
-      const hasLower = /[a-z]/.test(password);
-      const hasDigit = /\d/.test(password);
-      return hasUpper && hasLower && hasDigit;
-    };
+  test('password validation only requires a non-empty string', () => {
+    const isValidPassword = (password) => typeof password === 'string' && password.length > 0;
 
-    // Too short (even with complexity)
-    assert.ok(!isValidPassword('Short1Aa'), '8 chars should be invalid');
-    assert.ok(!isValidPassword('TooShort1Pass'), '13 chars should be invalid');
-    assert.ok(!isValidPassword('AlmostLong1Aa'), '14 chars should be invalid');
-    assert.ok(!isValidPassword('JustUnder1Aaaa'), '15 chars should be invalid');
-
-    // Exactly 16 chars with complexity
-    assert.ok(isValidPassword('ExactlyLong1Aaaa'), '16 chars with complexity should be valid');
+    // Operator's choice — any non-empty length is accepted
+    assert.ok(isValidPassword('admin'), 'Short password should be valid');
+    assert.ok(isValidPassword('Short1Aa'), '8 chars should be valid');
+    assert.ok(isValidPassword('a'), 'Single char should be valid');
+    assert.ok(isValidPassword('ExactlyLong1Aaaa'), 'Long password should be valid');
   });
 
-  test('password validation enforces complexity requirements', () => {
-    const isValidPassword = (password) => {
-      if (!password || typeof password !== 'string') return false;
-      if (password.length < 16) return false;
-      const hasUpper = /[A-Z]/.test(password);
-      const hasLower = /[a-z]/.test(password);
-      const hasDigit = /\d/.test(password);
-      return hasUpper && hasLower && hasDigit;
-    };
+  test('username validation accepts short operator-chosen names', () => {
+    const isValidUsername = (username) =>
+      typeof username === 'string' && /^[a-zA-Z0-9._-]{1,32}$/.test(username);
 
-    // Missing uppercase
-    assert.ok(!isValidPassword('alllowercaseno1234'), 'Missing uppercase should be invalid');
-
-    // Missing lowercase
-    assert.ok(!isValidPassword('ALLUPPERCASENO1234'), 'Missing lowercase should be invalid');
-
-    // Missing digit
-    assert.ok(!isValidPassword('NoDigitsHereAtAll'), 'Missing digit should be invalid');
-
-    // All requirements met
-    assert.ok(isValidPassword('SecurePassword123456'), 'All requirements met should be valid');
-    assert.ok(isValidPassword('MyAdminP@ssw0rd123'), 'Complex password should be valid');
+    assert.ok(isValidUsername('admin'), '"admin" should be valid');
+    assert.ok(isValidUsername('a'), 'Single char should be valid');
+    assert.ok(isValidUsername('admin.pinetruist'), 'Dots should be valid');
+    assert.ok(!isValidUsername(''), 'Empty string should be invalid');
+    assert.ok(!isValidUsername('has space'), 'Space should be invalid');
+    assert.ok(!isValidUsername('x'.repeat(33)), 'Over 32 chars should be invalid');
   });
 
-  test('password validation rejects null and undefined', () => {
-    const isValidPassword = (password) => {
-      if (!password || typeof password !== 'string') return false;
-      if (password.length < 16) return false;
-      const hasUpper = /[A-Z]/.test(password);
-      const hasLower = /[a-z]/.test(password);
-      const hasDigit = /\d/.test(password);
-      return hasUpper && hasLower && hasDigit;
-    };
+  test('password validation rejects null, undefined and empty', () => {
+    const isValidPassword = (password) => typeof password === 'string' && password.length > 0;
 
     assert.ok(!isValidPassword(null), 'Null should be invalid');
     assert.ok(!isValidPassword(undefined), 'Undefined should be invalid');

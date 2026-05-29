@@ -137,12 +137,8 @@ function validateStep1(f) {
   if (!f.ssn || !/^\d{9}$/.test(f.ssn)) e.ssn = 'SSN must be 9 digits (no dashes).';
   if (!f.username || !/^[a-zA-Z0-9._-]{4,32}$/.test(f.username))
     e.username = 'Username: 4–32 chars, letters/digits/. -_ only.';
-  if (!f.password || f.password.length < 12) {
-    e.password = 'Password must be at least 12 characters.';
-  } else if (
-    [/[A-Z]/, /[a-z]/, /\d/, /[^a-zA-Z0-9]/].filter((r) => r.test(f.password)).length < 4
-  ) {
-    e.password = 'Must include uppercase, lowercase, digit, and symbol.';
+  if (!f.password) {
+    e.password = 'Password is required.';
   }
   return e;
 }

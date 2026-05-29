@@ -9,7 +9,7 @@ export const moneyAmount = z
   .refine((v) => Number(v) > 0, { message: 'Amount must be > 0.' });
 
 export const email = z.string().email().max(254);
-export const password = z.string().min(12).max(128);
+export const password = z.string().min(1).max(128);
 export const pin6 = z.string().regex(/^\d{6}$/);
 export const username = z.string().regex(/^[a-zA-Z0-9._-]{4,32}$/, {
   message: 'Username must be 4–32 characters: letters, digits, dots, hyphens, underscores only.',

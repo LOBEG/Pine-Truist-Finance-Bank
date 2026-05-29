@@ -122,6 +122,7 @@ export function loadConfig({ serviceName, extraSchema = {} }) {
     },
     bootstrap: {
       enabled: { format: Boolean, default: false, env: 'ADMIN_BOOTSTRAP_ENABLED' },
+      adminUsername: { format: String, default: 'admin', env: 'ADMIN_USERNAME' },
       adminEmail: { format: String, default: '', env: 'ADMIN_EMAIL' },
       adminPassword: {
         format: String,
