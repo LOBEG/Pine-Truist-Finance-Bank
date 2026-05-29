@@ -10,6 +10,7 @@ import {
   notFoundHandler,
   healthRoutes,
   errors,
+  createHttpServer,
 } from '@pine/lib-http';
 import { csrfProtection } from '@pine/lib-http/csrf';
 import { inputSanitizer } from '@pine/lib-http/sanitize';
@@ -227,7 +228,9 @@ const stopRelay = startOutboxRelay({
   logger,
 });
 
-const server = app.listen(config.port, () => {
+const server = createHttpServer(app, {
+  maxHeaderSize: config.http.maxHeaderSizeBytes,
+}).listen(config.port, () => {
   logger.info({ port: config.port }, 'core-banking-api listening');
 });
 

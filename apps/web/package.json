@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port ${PORT:-3000} --host",
-    "start": "vite preview --port ${PORT:-3000} --host"
+    "preview": "NODE_OPTIONS=\"${NODE_OPTIONS:-} --max-http-header-size=${MAX_HTTP_HEADER_SIZE_BYTES:-65536}\" vite preview --port ${PORT:-3000} --host",
+    "start": "NODE_OPTIONS=\"${NODE_OPTIONS:-} --max-http-header-size=${MAX_HTTP_HEADER_SIZE_BYTES:-65536}\" vite preview --port ${PORT:-3000} --host"
   },
   "dependencies": {
     "react": "^18.3.1",

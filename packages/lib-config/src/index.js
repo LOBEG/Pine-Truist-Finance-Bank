@@ -35,6 +35,14 @@ export function loadConfig({ serviceName, extraSchema = {} }) {
       default: 'info',
       env: 'LOG_LEVEL',
     },
+    http: {
+      maxHeaderSizeBytes: {
+        doc: 'Maximum size (in bytes) of the combined HTTP request headers the server will accept. Node defaults to 16384 (16 KB); browsers that have accumulated many cookies plus a large admin JWT can exceed this and get an HTTP 431 (Request Header Fields Too Large) before any app code runs. Raised to 64 KB by default.',
+        format: 'nat',
+        default: 65536,
+        env: 'MAX_HTTP_HEADER_SIZE_BYTES',
+      },
+    },
     database: {
       url: {
         doc: 'PostgreSQL connection URL.',

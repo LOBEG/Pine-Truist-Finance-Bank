@@ -9,6 +9,7 @@ import {
   notFoundHandler,
   healthRoutes,
   errors,
+  createHttpServer,
 } from '@pine/lib-http';
 import { createJwtVerifier, requireAuth } from '@pine/lib-auth/jwt';
 import { requireRole, requireMfa } from '@pine/lib-auth/rbac';
@@ -106,7 +107,9 @@ app.use(errorHandler(logger));
 
 const stopRelay = startOutboxRelay({ publish, intervalMs: 500, logger });
 
-const server = app.listen(config.port, () => {
+const server = createHttpServer(app, {
+  maxHeaderSize: config.http.maxHeaderSizeBytes,
+}).listen(config.port, () => {
   logger.info({ port: config.port }, 'admin-api listening');
 });
 

@@ -31,7 +31,7 @@ healthRoutes(app, {
     await query('SELECT 1');
   },
 });
-const httpServer = http.createServer(app);
+const httpServer = http.createServer({ maxHeaderSize: config.http.maxHeaderSizeBytes }, app);
 
 const _corsOrigins = (config.cors.origins || '')
   .split(',')

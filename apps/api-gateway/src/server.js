@@ -13,6 +13,7 @@ import {
   errorHandler,
   notFoundHandler,
   healthRoutes,
+  createHttpServer,
 } from '@pine/lib-http';
 
 const config = loadConfig({ serviceName: 'api-gateway' });
@@ -186,7 +187,9 @@ if (WEB_STATIC_DIR) {
 app.use(notFoundHandler());
 app.use(errorHandler(logger));
 
-const server = app.listen(config.port, () => {
+const server = createHttpServer(app, {
+  maxHeaderSize: config.http.maxHeaderSizeBytes,
+}).listen(config.port, () => {
   logger.info(
     {
       port: config.port,

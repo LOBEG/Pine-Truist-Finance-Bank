@@ -1,3 +1,4 @@
+import http from 'node:http';
 import helmet from 'helmet';
 import cors from 'cors';
 
@@ -148,4 +149,27 @@ export function healthRoutes(app, checks = {}) {
     }
     res.status(ok ? 200 : 503).json({ ok, checks: results });
   });
+}
+
+// --------------------- HTTP server factory ---------------------
+
+/**
+ * Create a Node HTTP server for an Express app with a raised
+ * `maxHeaderSize`.
+ *
+ * Node's HTTP parser rejects any request whose combined header block exceeds
+ * `maxHeaderSize` (default 16 KB) with a bare HTTP 431 *before* Express
+ * middleware runs, so it cannot be handled by app-level error handling. Real
+ * browser sessions — especially admin/operator sessions that carry a large JWT
+ * (many roles/permissions) plus accumulated cookies on a shared origin — can
+ * exceed 16 KB and fail every request, including login. Raising the limit
+ * removes that failure mode.
+ *
+ * @param {import('express').Express} app - The Express application.
+ * @param {object} [options]
+ * @param {number} [options.maxHeaderSize=65536] - Max request header bytes.
+ * @returns {import('http').Server}
+ */
+export function createHttpServer(app, { maxHeaderSize = 65536 } = {}) {
+  return http.createServer({ maxHeaderSize }, app);
 }
