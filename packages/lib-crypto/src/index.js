@@ -33,6 +33,20 @@ export function hashPin(pin) {
 
 export const verifyPin = verifyPassword;
 
+// Hashes a low-entropy secret such as a security-question answer. These are
+// argon2id-hashed like passwords for defense-in-depth, but they intentionally
+// do NOT carry the password minimum-length policy — security answers are short
+// by nature (e.g. a city name). Callers should normalise (trim/lowercase)
+// before hashing so verification is stable.
+export function hashSecurityAnswer(answer) {
+  if (typeof answer !== 'string' || answer.length === 0) {
+    throw new Error('Security answer must be a non-empty string.');
+  }
+  return argon2.hash(answer, ARGON2_OPTIONS);
+}
+
+export const verifySecurityAnswer = verifyPassword;
+
 // --------------------- Random / tokens ---------------------
 
 export function generateNumericPin(length = 6) {

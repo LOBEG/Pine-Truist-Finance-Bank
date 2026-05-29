@@ -5,6 +5,8 @@ import {
   verifyPassword,
   hashPin,
   verifyPin,
+  hashSecurityAnswer,
+  verifySecurityAnswer,
   encryptField,
   decryptField,
   generateNumericPin,
@@ -21,6 +23,16 @@ test('argon2 PIN hash and verify', async () => {
   const hash = await hashPin('123456');
   assert.ok(await verifyPin(hash, '123456'));
   assert.equal(await verifyPin(hash, '000000'), false);
+});
+
+test('security answer hashes short low-entropy values without a length policy', async () => {
+  // Security answers are short by nature (e.g. a city name) and must not be
+  // subject to the 12-char password minimum. Regression test for the
+  // registration 500 caused by hashing the answer with hashPassword.
+  const hash = await hashSecurityAnswer('nyc');
+  assert.ok(await verifySecurityAnswer(hash, 'nyc'));
+  assert.equal(await verifySecurityAnswer(hash, 'boston'), false);
+  assert.throws(() => hashSecurityAnswer(''), /non-empty/);
 });
 
 test('AES-GCM envelope encryption round-trips', () => {

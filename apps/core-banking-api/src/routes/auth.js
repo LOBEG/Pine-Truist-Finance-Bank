@@ -8,7 +8,13 @@ import {
   registerBodySchema,
   mfaVerifyBodySchema,
 } from '@pine/lib-validation';
-import { hashPassword, verifyPassword, encryptField, decryptField } from '@pine/lib-crypto';
+import {
+  hashPassword,
+  hashSecurityAnswer,
+  verifyPassword,
+  encryptField,
+  decryptField,
+} from '@pine/lib-crypto';
 import { generateMfaSecret, buildOtpAuthUrl, verifyTotp } from '@pine/lib-auth/mfa';
 import { query } from '@pine/lib-db';
 import { loadUserPermissions, writeAudit } from '../services/identity.js';
@@ -94,7 +100,7 @@ export function buildAuthRouter({ signAccess, sessions, config, logger, publish,
 
       const hash = await hashPassword(password);
       const ssnEncrypted = encryptField(ssn, config.encryption.kekB64);
-      const securityAnswerHash = await hashPassword(securityAnswer.trim().toLowerCase());
+      const securityAnswerHash = await hashSecurityAnswer(securityAnswer.trim().toLowerCase());
 
       const insert = await query(
         `INSERT INTO users
