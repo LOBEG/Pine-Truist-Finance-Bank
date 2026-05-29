@@ -24,10 +24,13 @@ export function csrfProtection({ cookieName = '__Host-csrf', headerName = 'x-csr
     const existingToken = parseCookie(req.headers.cookie, cookieName);
     const token = existingToken || crypto.randomBytes(32).toString('base64url');
     if (!existingToken) {
-      res.setHeader(
-        'Set-Cookie',
-        `${cookieName}=${token}; Path=/; Secure; HttpOnly=false; SameSite=Strict`,
-      );
+      // NOTE: the cookie deliberately omits `HttpOnly`. The double-submit
+      // pattern requires client JS to read this token and echo it back in the
+      // `X-CSRF-Token` header. Browsers treat the mere *presence* of the
+      // `HttpOnly` attribute as enabled (the `=false` value is ignored), which
+      // would make the cookie unreadable by JS and cause every state-changing
+      // request to fail CSRF validation with 403.
+      res.setHeader('Set-Cookie', `${cookieName}=${token}; Path=/; Secure; SameSite=Strict`);
     }
 
     // Safe methods don't need validation.
