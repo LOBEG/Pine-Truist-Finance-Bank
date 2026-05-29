@@ -1,0 +1,86 @@
+# ============================================================
+# Pine Bank — combined single-origin image (web SPA + api-gateway)
+#
+# Builds the React/Vite SPA and ships it inside the api-gateway image so ONE
+# Railway service serves both the UI and /api/v1 on the same origin (port 8080).
+# This removes the separate web service, PINE_BACKEND_URL, and the internal-DNS
+# proxy hop — eliminating the "could not reach the API" class of errors.
+#
+# Build context MUST be the repository root, e.g. in apps/api-gateway/railway.json:
+#   "dockerfilePath": "apps/api-gateway/Dockerfile.combined"
+#
+# Required env on the single service: DATABASE_URL, CORE_BANKING_URL
+# (e.g. http://core-banking-api.railway.internal:8080), plus the usual JWT/CORS
+# vars. The browser calls /api/v1 same-origin, so NO PINE_BACKEND_URL is needed.
+# ============================================================
+
+# ---- Stage 1: build the web SPA ----------------------------
+FROM node:20-alpine AS web-builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/
+
+RUN npm ci --workspace=apps/web --include-workspace-root
+
+COPY apps/web/ ./apps/web/
+
+# SPA calls /api/v1 on its own origin (served by this same gateway).
+ARG PINE_API_URL=/api/v1
+ARG PINE_REALTIME_URL=
+
+RUN PINE_API_URL=${PINE_API_URL} PINE_REALTIME_URL=${PINE_REALTIME_URL} \
+    npm --workspace=apps/web run build
+
+# ---- Stage 2: install gateway production dependencies -------
+FROM node:20-alpine AS deps
+
+RUN apk add --no-cache python3 make g++ libc-dev
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY packages/lib-auth/package.json      packages/lib-auth/
+COPY packages/lib-config/package.json    packages/lib-config/
+COPY packages/lib-crypto/package.json    packages/lib-crypto/
+COPY packages/lib-db/package.json        packages/lib-db/
+COPY packages/lib-events/package.json    packages/lib-events/
+COPY packages/lib-http/package.json      packages/lib-http/
+COPY packages/lib-ledger/package.json    packages/lib-ledger/
+COPY packages/lib-logger/package.json    packages/lib-logger/
+COPY packages/lib-queue/package.json     packages/lib-queue/
+COPY packages/lib-validation/package.json packages/lib-validation/
+COPY apps/api-gateway/package.json       apps/api-gateway/
+
+RUN npm ci --omit=dev --ignore-scripts=false
+
+# ---- Stage 3: runner (non-root) ----------------------------
+FROM node:20-alpine AS runner
+
+RUN apk add --no-cache dumb-init
+
+RUN addgroup -S pine && adduser -S pine -G pine
+
+WORKDIR /app
+
+# Gateway runtime deps and source
+COPY --from=deps /app/node_modules ./node_modules
+COPY packages/ ./packages/
+COPY apps/api-gateway/ ./apps/api-gateway/
+
+# Built SPA — served by the gateway at the same origin as /api/v1.
+COPY --from=web-builder --chown=pine:pine /app/apps/web/dist ./apps/web/dist
+
+USER pine
+
+ENV NODE_ENV=production
+ENV PORT=8080
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=20s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://localhost:8080/healthz || exit 1
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "apps/api-gateway/src/server.js"]

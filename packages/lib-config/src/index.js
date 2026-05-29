@@ -116,6 +116,14 @@ export function loadConfig({ serviceName, extraSchema = {} }) {
       adminApiUrl: { format: String, default: '', env: 'ADMIN_API_URL' },
       realtimeGatewayUrl: { format: String, default: '', env: 'REALTIME_GATEWAY_URL' },
     },
+    web: {
+      staticDir: {
+        doc: 'Filesystem path to the built web SPA (apps/web/dist). When set and present, the api-gateway serves the SPA on the same origin as /api/v1, removing the need for a separate web service and PINE_BACKEND_URL. Leave empty to auto-detect the bundled build, or for pure-proxy deployments.',
+        format: String,
+        default: '',
+        env: 'WEB_STATIC_DIR',
+      },
+    },
     security: {
       adminIpAllowlist: { format: String, default: '', env: 'ADMIN_IP_ALLOWLIST' },
       trustProxy: { format: Boolean, default: true, env: 'RATE_LIMIT_TRUST_PROXY' },

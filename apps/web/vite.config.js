@@ -12,6 +12,35 @@ export default defineConfig(({ mode }) => {
   // http://api-gateway.railway.internal:8080
   const apiTarget = env.PINE_BACKEND_URL || env.PINE_API_PROXY_TARGET || 'http://localhost:8080';
 
+  // Guard against the most common Railway misconfiguration: pointing
+  // PINE_BACKEND_URL at the web service ITSELF (a self-loop). The web preview
+  // server only serves static files, so a self-targeted proxy can never reach
+  // an API and produces an endless "could not reach the API" 502. Fail fast at
+  // boot with an explicit message instead. Railway injects RAILWAY_PRIVATE_DOMAIN
+  // (this service's *.railway.internal host) and RAILWAY_SERVICE_NAME.
+  const selfHosts = [env.RAILWAY_PRIVATE_DOMAIN, env.RAILWAY_STATIC_URL]
+    .map((h) => (h || '').trim().toLowerCase())
+    .filter(Boolean);
+  let targetHost = '';
+  try {
+    targetHost = new URL(apiTarget).hostname.toLowerCase();
+  } catch {
+    throw new Error(`[web] PINE_BACKEND_URL is not a valid URL: ${apiTarget}`);
+  }
+  if (selfHosts.includes(targetHost)) {
+    throw new Error(
+      `[web] PINE_BACKEND_URL (${apiTarget}) points at THIS web service ` +
+        `(${targetHost}), which only serves static files and is not the API. ` +
+        'Point it at your api-gateway/core-banking-api service, e.g. ' +
+        'http://api-gateway.railway.internal:8080 — or better, deploy the ' +
+        'single-origin combined image (apps/api-gateway/Dockerfile.combined) ' +
+        'which needs no PINE_BACKEND_URL at all.',
+    );
+  }
+  // Surface the resolved upstream at boot so misconfiguration is obvious in logs.
+  // eslint-disable-next-line no-console
+  console.log(`[web] preview/dev API proxy: /api/v1 -> ${apiTarget}`);
+
   // Shared proxy config used by BOTH `server` (dev) and `preview` (production).
   // The error handler converts an unreachable upstream (ECONNREFUSED, timeout)
   // into a clear JSON 502 instead of the proxy's opaque, empty HTTP 500 — which

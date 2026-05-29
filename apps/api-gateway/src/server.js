@@ -1,6 +1,9 @@
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { RateLimiterPostgres } from 'rate-limiter-flexible';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { loadConfig } from '@pine/lib-config';
 import { createLogger, httpLogger } from '@pine/lib-logger';
 import { createPool, getPool, query } from '@pine/lib-db';
@@ -22,6 +25,37 @@ const logger = createLogger({
 // Initialize Postgres pool for rate limiting
 createPool({ url: config.database.url, ssl: config.database.ssl });
 
+// ---------------------------------------------------------------------------
+// Resolve the built web SPA directory (single-origin deployment).
+//
+// When the api-gateway can find a built SPA (apps/web/dist), it serves the UI
+// on the SAME origin as /api/v1. The browser then calls /api/v1 relative to
+// its own origin, so requests never traverse Railway private networking and
+// there is no PINE_BACKEND_URL / internal-DNS proxy to misconfigure.
+//
+// Resolution order:
+//   1. WEB_STATIC_DIR env (explicit override)
+//   2. bundled default: <repo>/apps/web/dist (relative to this file)
+// Static serving is enabled only when the resolved directory contains an
+// index.html; otherwise the gateway runs in pure-proxy mode (web served by a
+// separate service).
+// ---------------------------------------------------------------------------
+function resolveWebStaticDir() {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const candidate =
+    config.web.staticDir && config.web.staticDir.trim()
+      ? path.resolve(config.web.staticDir.trim())
+      : path.resolve(__dirname, '../../web/dist');
+  try {
+    if (fs.existsSync(path.join(candidate, 'index.html'))) return candidate;
+  } catch {
+    // fall through to disabled
+  }
+  return null;
+}
+
+const WEB_STATIC_DIR = resolveWebStaticDir();
+
 const app = express();
 app.disable('x-powered-by');
 if (config.security.trustProxy) app.set('trust proxy', 1);
@@ -35,6 +69,18 @@ healthRoutes(app, {
     await query('SELECT 1');
   },
 });
+
+// Serve static SPA assets (JS/CSS/images) BEFORE the global rate limiter so a
+// single asset-heavy page load does not consume the API request budget. This
+// never matches /api/v1 paths, which are handled by the proxies below.
+if (WEB_STATIC_DIR) {
+  app.use(
+    express.static(WEB_STATIC_DIR, {
+      index: false, // index.html is handled by the SPA fallback below
+      maxAge: '1h',
+    }),
+  );
+}
 
 // Postgres-native rate limiter (no Redis)
 let _limiter = null;
@@ -117,12 +163,28 @@ app.use(
 );
 app.use('/api/v1', createProxyMiddleware({ target: CORE_URL, ...commonProxyOpts }));
 
+// SPA fallback: any non-API request that did not match a static asset returns
+// index.html so client-side routing (React Router) works on hard reloads and
+// deep links. Registered AFTER the API proxies so /api/* never falls through.
+if (WEB_STATIC_DIR) {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    res.sendFile(path.join(WEB_STATIC_DIR, 'index.html'));
+  });
+}
+
 app.use(notFoundHandler());
 app.use(errorHandler(logger));
 
 const server = app.listen(config.port, () => {
   logger.info(
-    { port: config.port, coreUpstream: CORE_URL, adminUpstream: ADMIN_URL },
+    {
+      port: config.port,
+      coreUpstream: CORE_URL,
+      adminUpstream: ADMIN_URL,
+      webStaticDir: WEB_STATIC_DIR || null,
+      mode: WEB_STATIC_DIR ? 'single-origin (SPA + API)' : 'proxy-only (no SPA)',
+    },
     'api-gateway listening',
   );
 });

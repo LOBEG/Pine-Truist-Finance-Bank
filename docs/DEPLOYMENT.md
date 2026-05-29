@@ -48,6 +48,48 @@ INTERNET ──── CDN/WAF ──▶│           api-gateway               �
 
 ---
 
+## 1.1 Single-Origin Deployment (Recommended)
+
+There are two supported ways to serve the React SPA:
+
+**A. Single-origin (recommended) — no separate web service.**
+The `api-gateway` can serve the built SPA on the **same origin** as `/api/v1`.
+The browser loads the UI and calls `/api/v1` relative to its own origin, so
+requests never traverse Railway's private network. This removes the separate
+`web` service, the `PINE_BACKEND_URL` variable, and the internal-DNS proxy hop
+entirely — eliminating the "The web server could not reach the API …" class of
+errors at its source.
+
+To use it, point the `api-gateway` service at the combined Dockerfile:
+
+```jsonc
+// apps/api-gateway/railway.json
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "apps/api-gateway/Dockerfile.combined",
+  },
+}
+```
+
+The combined image builds `apps/web` and ships the static bundle inside the
+gateway image on port `8080`. The gateway auto-detects the bundled SPA at
+`apps/web/dist` (override with `WEB_STATIC_DIR`) and serves it with an SPA
+fallback for client-side routes, while `/api/v1` and `/api/v1/admin` continue to
+proxy to `core-banking-api`/`admin-api` exactly as before. At boot it logs
+`mode: "single-origin (SPA + API)"`. **Do NOT set `PINE_BACKEND_URL` in this
+mode** — it is not used.
+
+With single-origin, drop the separate `web` service from the 10 above (9 total).
+
+**B. Split deployment — separate `web` service (legacy).**
+Keep the `web` service running the Vite preview server. It **must** set
+`PINE_BACKEND_URL` to the `api-gateway` (or `core-banking-api`) private URL.
+Pointing it at the web service's own host is a self-loop and now fails fast at
+build/boot with an explicit error. See the `web only` env block in §3.3.
+
+---
+
 ## 2. Prerequisites
 
 ### Railway Account Setup
@@ -161,13 +203,19 @@ JWT_AUDIENCE=pine-bank-clients
 CORS_ORIGINS=https://app.pinebank.com
 ```
 
-**web only:**
+**web only (split deployment, Option B only — omit entirely for single-origin):**
 
 ```
+# Required: the api-gateway/core-banking-api private URL the SPA proxies to.
+# Must NOT be this web service's own host (that is a self-loop and fails fast).
+PINE_BACKEND_URL=http://api-gateway.railway.internal:8080
 PINE_API_URL=https://api.pinebank.com/api/v1
 PINE_REALTIME_URL=https://realtime.pinebank.com
 PORT=3000
 ```
+
+> Single-origin (Option A) needs none of the above: the api-gateway serves the
+> SPA and `PINE_BACKEND_URL` is not used.
 
 **scheduler only:**
 
@@ -178,8 +226,12 @@ TZ=America/New_York
 ### 3.4 Run Database Migrations
 
 Railway's `preDeployCommand` in `apps/core-banking-api/railway.json` runs
-`node db/cli.js migrate` automatically before each deploy. For the first deploy,
-you can also trigger it manually:
+`node db/cli.js migrate` automatically before each deploy. Alternatively, set
+`RUN_MIGRATIONS_ON_STARTUP=true` to apply pending migrations at boot
+(advisory-locked across replicas). **Either mechanism belongs on the
+`core-banking-api` service only** (the service that owns the database) — not on
+the `web`/single-origin `api-gateway` front end. For the first deploy, you can
+also trigger migrations manually:
 
 ```bash
 railway run --service core-banking-api node db/cli.js migrate
