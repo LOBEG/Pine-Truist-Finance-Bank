@@ -157,11 +157,21 @@ const commonProxyOpts = {
   },
 };
 
+// NOTE: use `pathFilter` (not Express path-mounting) so the matched prefix is
+// preserved when forwarding. With http-proxy-middleware v3, mounting via
+// `app.use('/api/v1', proxy)` makes Express strip `/api/v1` from req.url before
+// the proxy runs, so the upstream would receive `/auth/login` instead of
+// `/api/v1/auth/login` and 404 ("No route POST /auth/login"). Mounting at the
+// app root with `pathFilter` keeps the full original path intact. The admin
+// proxy is registered first so admin paths are handled before the catch-all.
 app.use(
-  '/api/v1/admin',
-  createProxyMiddleware({ target: ADMIN_URL || CORE_URL, ...commonProxyOpts }),
+  createProxyMiddleware({
+    pathFilter: '/api/v1/admin',
+    target: ADMIN_URL || CORE_URL,
+    ...commonProxyOpts,
+  }),
 );
-app.use('/api/v1', createProxyMiddleware({ target: CORE_URL, ...commonProxyOpts }));
+app.use(createProxyMiddleware({ pathFilter: '/api/v1', target: CORE_URL, ...commonProxyOpts }));
 
 // SPA fallback: any non-API request that did not match a static asset returns
 // index.html so client-side routing (React Router) works on hard reloads and
